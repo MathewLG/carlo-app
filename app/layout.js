@@ -1,17 +1,28 @@
-import { Inter } from "next/font/google";
-import "./globals.css";
-
-const inter = Inter({ subsets: ["latin"] });
+import '@styles/globals.css';
+import Nav from '@components/Nav'
+import Provider from '@components/Provider'
 
 export const metadata = {
-  title: "Carlo App",
-  description: "Feliz cumple, Carlito.",
-};
-
-export default function RootLayout({ children }) {
-  return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
-    </html>
-  );
+    title: "Carlo App",
+    description: "Carlo App."
 }
+
+const RootLayout = ({children}) => {
+  return (
+    <html lang="es">
+        <body>
+          <Provider>
+            <div className="main">
+              <div className="gradient" />
+            </div>
+              <main className="app">
+                  <Nav/>
+                  {children}
+              </main>
+            </Provider>
+        </body>
+    </html>
+  )
+}
+
+export default RootLayout
