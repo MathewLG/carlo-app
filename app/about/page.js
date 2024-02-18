@@ -1,6 +1,6 @@
 
 export default function About() {
   return (
-    <h>About page</h>
+    <h>This app is for family use and collects only email and username to work. </h>
   );
 }
