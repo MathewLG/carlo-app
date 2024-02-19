@@ -1,4 +1,5 @@
 import { connectToDB } from '@utils/database';
+export const dynamic = "force-dynamic";
 import Memory from '@models/memory';
 
 export const GET = async (request) => {
