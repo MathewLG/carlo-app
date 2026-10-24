@@ -1,19 +1,37 @@
 import { connectToDB } from '@utils/database';
 import { getSessionUserId } from '@utils/auth';
+import { escapeRegex } from '@utils/validate';
 import Memory from '@models/memory';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = async () => {
+// Query params:
+//   q    text to search inside the memory or its tag
+//   tag  exact tag to filter by
+//   mine "1" to only return the signed-in user's memories
+export const GET = async (request) => {
   const userId = await getSessionUserId();
   if (!userId) {
     return Response.json({ error: 'Inicia sesión para ver los recuerdos' }, { status: 401 });
   }
 
+  const params = new URL(request.url).searchParams;
+  const q = (params.get('q') || '').trim().substring(0, 100);
+  const tag = (params.get('tag') || '').trim().substring(0, 50);
+  const mine = params.get('mine') === '1';
+
+  const filter = {};
+  if (mine) filter.creator = userId;
+  if (tag) filter.tag = tag;
+  if (q) {
+    const pattern = new RegExp(escapeRegex(q), 'i');
+    filter.$or = [{ memory: pattern }, { tag: pattern }];
+  }
+
   try {
     await connectToDB();
     // Only public profile fields; creator emails stay on the server.
-    const memories = await Memory.find({})
+    const memories = await Memory.find(filter)
       .sort({ _id: -1 })
       .populate('creator', 'username image');
 

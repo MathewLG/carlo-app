@@ -26,6 +26,7 @@ const CreateMemory = () => {
 
       if (response.ok) {
         router.push('/');
+        router.refresh();
         return;
       }
       const data = await response.json().catch(() => ({}));
@@ -39,15 +40,18 @@ const CreateMemory = () => {
   };
 
   if (status === 'loading') {
-    return <p className="desc">Cargando…</p>;
+    return <p className="status-text mt-12">Cargando…</p>;
   }
   if (status === 'unauthenticated') {
-    return <p className="desc">Inicia sesión para agregar un recuerdo.</p>;
+    return <p className="status-text mt-12">Inicia sesión para escribir un recuerdo.</p>;
   }
 
   return (
     <Form
-      type="Agregar"
+      title="Nuevo recuerdo"
+      description="Escribe algo para el Carlo del futuro: lo que pasó hoy, lo que te hizo reír o lo que quieres que sepa."
+      submitLabel="Guardar recuerdo"
+      cancelHref="/"
       post={post}
       setPost={setPost}
       submitting={submitting}

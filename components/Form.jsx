@@ -1,72 +1,57 @@
 import Link from 'next/link';
+import { MAX_MEMORY_LENGTH, MAX_TAG_LENGTH } from '@utils/validate';
 
-const Form = ({ type, post, setPost, submitting, handleSubmit, error }) => {
-  return (
-    <section className='w-full max-w-full flex-start flex-col'>
-      <h1 className='head_text text-left'>
-        <span className='blue_gradient'>{type} Recuerdos</span>
-      </h1>
-      <p className='desc text-left max-w-md'>
-        {type} y comparte recuerdos con el Carlo del futuro.  
-      </p>
-      <form
-        onSubmit={handleSubmit}
-        className='mt-10 w-full max-w-2xl flex flex-col gap-7 glassmorphism'
-      >
-        <label>
-          <span className='font-satoshi font-semibold text-base text-gray-700' >
-            Tu recuerdo con Carlo
-          </span>
-        
-          <textarea
-            value={post.memory}
-            onChange={(e) => setPost({...post,
-            memory: e.target.value})}
-            maxLength={5000}
-            placeholder='Escribe tu mensaje aquí'
-            required
-            className='form_textarea'
-          />
-        </label>
+const Form = ({ title, description, submitLabel, cancelHref, post, setPost, submitting, handleSubmit, error }) => (
+  <section className="mx-auto mt-6 w-full max-w-2xl">
+    <h1 className="text-4xl font-bold sm:text-5xl">{title}</h1>
+    <p className="mt-3 text-lg text-ink-soft">{description}</p>
 
-        <label>
-          <span className='font-satoshi font-semibold text-base text-gray-700' >
-            Categoria { ` `}
-            <span className='font-normal'>(#mensaje, #recuerdo )</span>
-          </span>
-        
-          <input
-            value={post.tag}
-            onChange={(e) => setPost({...post,
-            tag: e.target.value})}
-            maxLength={50}
-            placeholder='#categoria'
-            required
-            className='form_input'
-          />
-        </label>
-        {error && (
-          <p role='alert' className='text-sm text-red-700'>
-            {error}
-          </p>
-        )}
-        <div className='flex-end mx-3 mb-5 gap-4'>
-          <Link href="/" className='text-gray-500 text-sm'>
-            Cancelar
-          </Link>
+    <form onSubmit={handleSubmit} className="sticker mt-8 flex flex-col gap-6">
+      <label>
+        <span className="label">Tu recuerdo con Carlo</span>
+        <textarea
+          value={post.memory}
+          onChange={(e) => setPost({ ...post, memory: e.target.value })}
+          maxLength={MAX_MEMORY_LENGTH}
+          placeholder="Escribe tu mensaje aquí"
+          required
+          rows={8}
+          className="field resize-y"
+        />
+        <span className="mt-1 block text-right text-sm text-ink-soft">
+          {post.memory.length} / {MAX_MEMORY_LENGTH}
+        </span>
+      </label>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="px-5 py-1.5 text-sm bg-primary-orange rounded-full text-white"
-          >
-            {submitting ? `${type}…` : type}
+      <label>
+        <span className="label">Categoría</span>{' '}
+        <span className="text-ink-soft">(por ejemplo #mensaje o #recuerdo)</span>
+        <input
+          value={post.tag}
+          onChange={(e) => setPost({ ...post, tag: e.target.value })}
+          maxLength={MAX_TAG_LENGTH}
+          placeholder="#categoria"
+          required
+          className="field"
+        />
+      </label>
 
-          </button>
-        </div>
-      </form>
-    </section>
-  )
-}
+      {error && (
+        <p role="alert" className="font-semibold text-danger">
+          {error}
+        </p>
+      )}
 
-export default Form
+      <div className="flex flex-wrap items-center justify-end gap-4">
+        <Link href={cancelHref} className="link">
+          Cancelar
+        </Link>
+        <button type="submit" disabled={submitting} className="btn btn-primary">
+          {submitting ? 'Guardando…' : submitLabel}
+        </button>
+      </div>
+    </form>
+  </section>
+);
+
+export default Form;

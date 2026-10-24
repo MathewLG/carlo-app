@@ -1,9 +1,7 @@
 import { connectToDB } from '@utils/database';
 import { getSessionUserId } from '@utils/auth';
+import { parseMemoryInput } from '@utils/validate';
 import Memory from '@models/memory';
-
-const MAX_MEMORY_LENGTH = 5000;
-const MAX_TAG_LENGTH = 50;
 
 export const POST = async (req) => {
   // The creator always comes from the session, never from the request body,
@@ -20,19 +18,14 @@ export const POST = async (req) => {
     return Response.json({ error: 'Solicitud inválida' }, { status: 400 });
   }
 
-  const memory = typeof body.memory === 'string' ? body.memory.trim() : '';
-  const tag = typeof body.tag === 'string' ? body.tag.trim() : '';
-
-  if (!memory || !tag) {
-    return Response.json({ error: 'El recuerdo y la categoría son obligatorios' }, { status: 400 });
-  }
-  if (memory.length > MAX_MEMORY_LENGTH || tag.length > MAX_TAG_LENGTH) {
-    return Response.json({ error: 'El texto es demasiado largo' }, { status: 400 });
+  const input = parseMemoryInput(body);
+  if (input.error) {
+    return Response.json({ error: input.error }, { status: 400 });
   }
 
   try {
     await connectToDB();
-    const newMemory = await Memory.create({ creator: userId, memory, tag });
+    const newMemory = await Memory.create({ creator: userId, memory: input.memory, tag: input.tag });
     return Response.json(newMemory, { status: 201 });
   } catch (error) {
     console.error('POST /api/memory/new failed', error);
