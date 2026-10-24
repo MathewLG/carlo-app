@@ -1,7 +1,6 @@
 import Link from 'next/link';
 
-const Form = ({type,post,setPost,submitting,handleSubmit
-}) => {
+const Form = ({ type, post, setPost, submitting, handleSubmit, error }) => {
   return (
     <section className='w-full max-w-full flex-start flex-col'>
       <h1 className='head_text text-left'>
@@ -23,6 +22,7 @@ const Form = ({type,post,setPost,submitting,handleSubmit
             value={post.memory}
             onChange={(e) => setPost({...post,
             memory: e.target.value})}
+            maxLength={5000}
             placeholder='Escribe tu mensaje aquí'
             required
             className='form_textarea'
@@ -39,11 +39,17 @@ const Form = ({type,post,setPost,submitting,handleSubmit
             value={post.tag}
             onChange={(e) => setPost({...post,
             tag: e.target.value})}
+            maxLength={50}
             placeholder='#categoria'
             required
             className='form_input'
           />
         </label>
+        {error && (
+          <p role='alert' className='text-sm text-red-700'>
+            {error}
+          </p>
+        )}
         <div className='flex-end mx-3 mb-5 gap-4'>
           <Link href="/" className='text-gray-500 text-sm'>
             Cancelar
@@ -54,7 +60,7 @@ const Form = ({type,post,setPost,submitting,handleSubmit
             disabled={submitting}
             className="px-5 py-1.5 text-sm bg-primary-orange rounded-full text-white"
           >
-            {submitting? `{type}...` : type}
+            {submitting ? `${type}…` : type}
 
           </button>
         </div>

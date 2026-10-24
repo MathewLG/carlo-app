@@ -40,18 +40,17 @@ const Nav = () => {
             className="black_btn">
               Agregar nuevo recuerdo
             </Link>
-            <button type="button" onClick={signOut} className="outline_btn">
+            <button type="button" onClick={() => signOut()} className="outline_btn">
               Cerrar Sesión
             </button>
-            <Link href="/profile">
-              <Image
-                src={session?.user.image}
-                width={37}
-                height={37}
-                className="rounded-full"
-                alt="profile"
-              />
-            </Link>
+            {/* TODO: link to /profile once the profile page exists */}
+            <Image
+              src={session?.user.image}
+              width={37}
+              height={37}
+              className="rounded-full"
+              alt=""
+            />
           </div>
         ): (
           <>
@@ -76,25 +75,22 @@ const Nav = () => {
       <div className="sm:hidden flex relative">
         {session?.user ? (
           <div className="flex">
-              <Image
-                src={session?.user.image}
-                width={37}
-                height={37}
-                className="rounded-full"
-                alt="profile"
-                onClick={() => settoggleDropdown(
-                  (prev) => !prev
-                )}
-              />
+              <button
+                type="button"
+                aria-label="Abrir menú"
+                aria-expanded={toggleDropdown}
+                onClick={() => settoggleDropdown((prev) => !prev)}
+              >
+                <Image
+                  src={session?.user.image}
+                  width={37}
+                  height={37}
+                  className="rounded-full"
+                  alt=""
+                />
+              </button>
               {toggleDropdown && (
                 <div className="dropdown">
-                  <Link
-                    href="/profile"
-                    className="dropdown_link"
-                    onClick={() => settoggleDropdown(false)}
-                  >
-                    Mi Perfil
-                  </Link>
                   <Link
                     href="/create-memory"
                     className="dropdown_link"

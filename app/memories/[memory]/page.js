@@ -1,6 +1,6 @@
 
 export default function SingleMemory() {
   return (
-    <h>Single memory page</h>
+    <p className="desc">Single memory page</p>
   );
 }
