@@ -2,7 +2,7 @@ import Feed from '@components/Feed';
 
 const Home = () => (
   <section className="mt-6">
-    <h1 className="max-w-3xl text-5xl font-bold leading-[1.1] sm:text-6xl">
+    <h1 className="max-w-3xl text-4xl font-bold leading-[1.15] sm:text-6xl">
       Compartiendo{' '}
       <span className="inline-block -rotate-2 rounded-xl border-2 border-ink bg-sky px-3 shadow-sticker-sm">
         recuerdos
