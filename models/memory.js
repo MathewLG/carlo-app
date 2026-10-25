@@ -15,6 +15,11 @@ const MemorySchema = new Schema(
       type: String,
       required: [true, 'Por favor ingresa una categoria'],
     },
+    // The day it happened, stored at noon UTC (see utils/dates.js). Empty
+    // means the day it was written.
+    happenedAt: {
+      type: Date,
+    },
   },
   // New memories get createdAt/updatedAt. Older ones don't have them, but
   // their _id still carries the creation time.

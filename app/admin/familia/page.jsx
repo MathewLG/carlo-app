@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { formatDate } from '@utils/format';
+import AdminNav from '@components/AdminNav';
 
 const SOURCES = { memoria: 'Ya tenía recuerdos', codigo: 'Código familiar', admin: 'Agregado por ti' };
 
@@ -225,6 +226,7 @@ export default function AdminFamily() {
   return (
     <div className="mx-auto mt-6 w-full max-w-3xl">
       <h1 className="text-4xl font-bold sm:text-5xl">Familia</h1>
+      <AdminNav />
       <p className="mt-3 text-lg text-ink-soft">Quién puede leer y escribir recuerdos para Carlo.</p>
       <JoinCode />
       <Family ownEmail={session.user.email.toLowerCase()} />

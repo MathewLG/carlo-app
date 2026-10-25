@@ -7,6 +7,8 @@ const SettingsSchema = new Schema({
     default: 'app',
     unique: true,
   },
+  // Stored at noon UTC like every picked day; see utils/dates.js.
+  carloBirthDate: Date,
   // The family code is stored only as a scrypt hash; see utils/joinCode.js.
   joinCodeHash: String,
   joinCodeSalt: String,

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSession, signIn } from 'next-auth/react';
 import MemoryCard from './MemoryCard';
+import useCarloBirthDate from './useCarloBirthDate';
 
 const SEARCH_DELAY_MS = 300;
 
@@ -15,6 +16,7 @@ const Status = ({ children, role = 'status' }) => (
 // mine: only the signed-in user's memories (used on /profile).
 const Feed = ({ mine = false }) => {
   const { status } = useSession();
+  const birthDate = useCarloBirthDate();
   const [searchText, setSearchText] = useState('');
   const [query, setQuery] = useState('');
   const [tag, setTag] = useState('');
@@ -144,7 +146,7 @@ const Feed = ({ mine = false }) => {
       {loadState === 'ready' && memories.length > 0 && (
         <div className="memory-grid mt-10">
           {memories.map((memory) => (
-            <MemoryCard key={memory._id} memory={memory} onTagClick={setTag} />
+            <MemoryCard key={memory._id} memory={memory} onTagClick={setTag} birthDate={birthDate} />
           ))}
         </div>
       )}

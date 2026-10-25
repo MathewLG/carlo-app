@@ -10,7 +10,7 @@ const CreateMemory = () => {
   const { status } = useSession();
   const [submitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [post, setPost] = useState({ memory: '', tag: '' });
+  const [post, setPost] = useState({ memory: '', tag: '', happenedAt: '' });
 
   const createMemory = async (e) => {
     e.preventDefault();
@@ -21,7 +21,7 @@ const CreateMemory = () => {
       const response = await fetch('/api/memory/new', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ memory: post.memory, tag: post.tag }),
+        body: JSON.stringify(post),
       });
 
       if (response.ok) {

@@ -23,7 +23,12 @@ export const POST = async (req) => {
 
   try {
     await connectToDB();
-    const newMemory = await Memory.create({ creator: user._id, memory: input.memory, tag: input.tag });
+    const newMemory = await Memory.create({
+      creator: user._id,
+      memory: input.memory,
+      tag: input.tag,
+      happenedAt: input.happenedAt ?? undefined,
+    });
     return Response.json(newMemory, { status: 201 });
   } catch (error) {
     console.error('POST /api/memory/new failed', error);
