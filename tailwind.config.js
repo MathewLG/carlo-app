@@ -1,20 +1,31 @@
 /** @type {import('tailwindcss').Config} */
+// Tokens mirror DESIGN.md. Change them there first.
 module.exports = {
   content: [
-    './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {
       fontFamily: {
-        satoshi: ['Satoshi', 'sans-serif'],
-        inter: ['Inter', 'sans-serif'],
+        display: ['var(--font-display)', 'ui-rounded', 'system-ui', 'sans-serif'],
+        body: ['var(--font-body)', 'ui-rounded', 'system-ui', 'sans-serif'],
       },
       colors: {
-        'primary-orange': '#FF5722',
-      }
+        'carlo-blue': '#004AAD',
+        sky: '#0CC0DF',
+        sun: '#FFC93C',
+        ink: '#14274A',
+        'ink-soft': '#46607F',
+        cloud: '#EEF7FF',
+        danger: '#B42318',
+      },
+      boxShadow: {
+        // Hard offset, no blur: the "sticker" motif from DESIGN.md.
+        sticker: '4px 4px 0 0 #14274A',
+        'sticker-sm': '3px 3px 0 0 #14274A',
+      },
     },
   },
   plugins: [],
-}
+};

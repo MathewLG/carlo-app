@@ -1,24 +1,12 @@
 import mongoose from 'mongoose';
 
-let isConnected = false;
-
 export const connectToDB = async () => {
-    mongoose.set('strictQuery', true);
-    if(isConnected){
-        console.log('MongoDB is already connected');
-        return;
-    }
+  mongoose.set('strictQuery', true);
 
-    try{
-        await mongoose.connect(process.env.MONGODB_URI, {
-            dbName: "carlo_app", 
-            useNewUrlParser: true, 
-            useUnifiedTopology: true,
-        })
+  // 1 = connected, 2 = connecting. Reuse the connection across warm invocations.
+  if (mongoose.connection.readyState === 1 || mongoose.connection.readyState === 2) {
+    return mongoose.connection.asPromise();
+  }
 
-        isConnected = true;
-        console.log('MongoDB Connected')
-    } catch (error){
-        console.log(error);
-    }
-}
+  await mongoose.connect(process.env.MONGODB_URI, { dbName: 'carlo_app' });
+};
