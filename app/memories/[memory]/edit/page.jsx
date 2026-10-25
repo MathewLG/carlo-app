@@ -20,7 +20,8 @@ export default function EditMemory() {
         if (response.status === 404) return setLoadState('missing');
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const memory = await response.json();
-        if (memory.creator?._id !== session.user.id) return setLoadState('forbidden');
+        const canChange = memory.creator?._id === session.user.id || session.user.role === 'admin';
+        if (!canChange) return setLoadState('forbidden');
         setPost({ memory: memory.memory, tag: memory.tag });
         setLoadState('ready');
       })
@@ -28,7 +29,7 @@ export default function EditMemory() {
         console.error(err);
         setLoadState('error');
       });
-  }, [id, status, session?.user?.id]);
+  }, [id, status, session?.user?.id, session?.user?.role]);
 
   const saveMemory = async (e) => {
     e.preventDefault();

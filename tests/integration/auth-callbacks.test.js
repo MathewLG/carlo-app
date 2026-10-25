@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import User from '@models/user';
-import { authOptions, getSessionUserId } from '@utils/auth';
+import { authOptions } from '@utils/auth';
 import { makeUser } from '../fixtures/people';
-import { clearDatabase, signInAs, signOut, startDatabase } from './setup';
+import { clearDatabase, startDatabase } from './setup';
 
 vi.mock('next-auth', async (importOriginal) => ({ ...(await importOriginal()), getServerSession: vi.fn() }));
 
@@ -41,24 +41,20 @@ describe('signIn callback', () => {
 });
 
 describe('session callback', () => {
-  it('adds the database id and username to the session', async () => {
+  it('adds the id, username, role and allow-list status to the session', async () => {
     const rosa = await makeUser({ username: 'abuelarosa' });
     const result = await session({ session: { user: { email: rosa.email } } });
-    expect(result.user).toMatchObject({ id: rosa._id.toString(), username: 'abuelarosa' });
+    expect(result.user).toMatchObject({ id: rosa._id.toString(), username: 'abuelarosa', role: 'familiar', allowed: true });
+  });
+
+  it('marks an account that is not on the list yet', async () => {
+    const primo = await makeUser({ invited: false });
+    const result = await session({ session: { user: { email: primo.email } } });
+    expect(result.user.allowed).toBe(false);
   });
 
   it('leaves a session without an email untouched', async () => {
     const empty = { user: {} };
     expect(await session({ session: empty })).toBe(empty);
-  });
-});
-
-describe('getSessionUserId', () => {
-  it('returns the id of the signed-in user, or null when signed out', async () => {
-    const rosa = await makeUser();
-    signInAs(rosa);
-    expect(await getSessionUserId()).toBe(rosa._id.toString());
-    signOut();
-    expect(await getSessionUserId()).toBeNull();
   });
 });

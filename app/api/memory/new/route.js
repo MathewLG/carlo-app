@@ -1,15 +1,13 @@
 import { connectToDB } from '@utils/database';
-import { getSessionUserId } from '@utils/auth';
+import { requireUser } from '@utils/access';
 import { parseMemoryInput } from '@utils/validate';
 import Memory from '@models/memory';
 
 export const POST = async (req) => {
   // The creator always comes from the session, never from the request body,
   // so nobody can post a memory under someone else's name.
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return Response.json({ error: 'Inicia sesión para agregar un recuerdo' }, { status: 401 });
-  }
+  const { response, user } = await requireUser();
+  if (response) return response;
 
   let body;
   try {
@@ -25,7 +23,7 @@ export const POST = async (req) => {
 
   try {
     await connectToDB();
-    const newMemory = await Memory.create({ creator: userId, memory: input.memory, tag: input.tag });
+    const newMemory = await Memory.create({ creator: user._id, memory: input.memory, tag: input.tag });
     return Response.json(newMemory, { status: 201 });
   } catch (error) {
     console.error('POST /api/memory/new failed', error);

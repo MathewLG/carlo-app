@@ -14,6 +14,7 @@ const Nav = () => {
   const menuOpen = menuOpenOn === pathname;
   const menuRef = useRef(null);
   const user = session?.user;
+  const isAdmin = user?.role === 'admin';
 
   // Close the mobile menu on Escape or a tap outside it.
   useEffect(() => {
@@ -44,6 +45,11 @@ const Nav = () => {
       <div className="hidden items-center gap-4 sm:flex">
         {user ? (
           <>
+            {isAdmin && (
+              <Link href="/admin/familia" className="link" aria-current={pathname === '/admin/familia' ? 'page' : undefined}>
+                Familia
+              </Link>
+            )}
             <Link href="/profile" className="link" aria-current={pathname === '/profile' ? 'page' : undefined}>
               Mis recuerdos
             </Link>
@@ -85,6 +91,11 @@ const Nav = () => {
                 <Link href="/profile" className="btn btn-outline">
                   Mis recuerdos
                 </Link>
+                {isAdmin && (
+                  <Link href="/admin/familia" className="btn btn-outline">
+                    Familia
+                  </Link>
+                )}
                 <button type="button" onClick={() => signOut()} className="btn btn-outline">
                   Cerrar sesión
                 </button>
