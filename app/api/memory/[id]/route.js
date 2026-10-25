@@ -1,6 +1,6 @@
 import { isValidObjectId } from 'mongoose';
 import { connectToDB } from '@utils/database';
-import { getSessionUserId } from '@utils/auth';
+import { canEdit, requireUser } from '@utils/access';
 import { parseMemoryInput } from '@utils/validate';
 import Memory from '@models/memory';
 
@@ -8,21 +8,17 @@ export const dynamic = 'force-dynamic';
 
 const notFound = () => Response.json({ error: 'Este recuerdo no existe' }, { status: 404 });
 
-// Shared guard: signed in, valid id, memory exists. Returns { userId, memory } or { response }.
+// Shared guard: on the allow list, valid id, memory exists. Returns { user, memory } or { response }.
 const loadMemory = async (id) => {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return { response: Response.json({ error: 'Inicia sesión primero' }, { status: 401 }) };
-  }
+  const { response, user } = await requireUser();
+  if (response) return { response };
   if (!isValidObjectId(id)) return { response: notFound() };
 
   await connectToDB();
   const memory = await Memory.findById(id).populate('creator', 'username image');
   if (!memory) return { response: notFound() };
-  return { userId, memory };
+  return { user, memory };
 };
-
-const isOwner = (memory, userId) => memory.creator?._id?.toString() === userId;
 
 export const GET = async (_request, { params }) => {
   try {
@@ -37,9 +33,9 @@ export const GET = async (_request, { params }) => {
 
 export const PATCH = async (request, { params }) => {
   try {
-    const { response, userId, memory } = await loadMemory((await params).id);
+    const { response, user, memory } = await loadMemory((await params).id);
     if (response) return response;
-    if (!isOwner(memory, userId)) {
+    if (!canEdit(user, memory)) {
       return Response.json({ error: 'Solo quien escribió este recuerdo puede editarlo' }, { status: 403 });
     }
 
@@ -52,6 +48,7 @@ export const PATCH = async (request, { params }) => {
     const input = parseMemoryInput(body);
     if (input.error) return Response.json({ error: input.error }, { status: 400 });
 
+    // The author stays the same even when the admin edits.
     memory.memory = input.memory;
     memory.tag = input.tag;
     await memory.save();
@@ -64,9 +61,9 @@ export const PATCH = async (request, { params }) => {
 
 export const DELETE = async (_request, { params }) => {
   try {
-    const { response, userId, memory } = await loadMemory((await params).id);
+    const { response, user, memory } = await loadMemory((await params).id);
     if (response) return response;
-    if (!isOwner(memory, userId)) {
+    if (!canEdit(user, memory)) {
       return Response.json({ error: 'Solo quien escribió este recuerdo puede borrarlo' }, { status: 403 });
     }
     await Memory.deleteOne({ _id: memory._id });

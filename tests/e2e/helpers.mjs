@@ -12,7 +12,7 @@ const db = async () => {
 
 export const resetDatabase = async () => {
   const conn = await db();
-  await Promise.all(['users', 'memories'].map((name) => conn.collection(name).deleteMany({})));
+  await Promise.all(['users', 'memories', 'invites', 'settings'].map((name) => conn.collection(name).deleteMany({})));
 };
 
 export const closeDatabase = async () => {
@@ -21,7 +21,8 @@ export const closeDatabase = async () => {
 };
 
 let counter = 0;
-export const seedUser = async (overrides = {}) => {
+// On the allow list unless invited: false; pass role: 'admin' for the admin.
+export const seedUser = async ({ invited = true, ...overrides } = {}) => {
   counter += 1;
   const user = {
     _id: new mongoose.Types.ObjectId(),
@@ -29,7 +30,13 @@ export const seedUser = async (overrides = {}) => {
     username: `familiar${counter}`,
     ...overrides,
   };
-  await (await db()).collection('users').insertOne(user);
+  const conn = await db();
+  await conn.collection('users').insertOne({ role: 'familiar', ...user });
+  if (invited) {
+    await conn
+      .collection('invites')
+      .insertOne({ email: user.email.toLowerCase(), source: 'admin', joinedAt: new Date() });
+  }
   return user;
 };
 

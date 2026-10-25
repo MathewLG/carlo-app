@@ -1,5 +1,5 @@
 import { connectToDB } from '@utils/database';
-import { getSessionUserId } from '@utils/auth';
+import { requireUser } from '@utils/access';
 import { escapeRegex } from '@utils/validate';
 import Memory from '@models/memory';
 
@@ -10,10 +10,8 @@ export const dynamic = 'force-dynamic';
 //   tag  exact tag to filter by
 //   mine "1" to only return the signed-in user's memories
 export const GET = async (request) => {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return Response.json({ error: 'Inicia sesión para ver los recuerdos' }, { status: 401 });
-  }
+  const { response, user } = await requireUser();
+  if (response) return response;
 
   const params = new URL(request.url).searchParams;
   const q = (params.get('q') || '').trim().substring(0, 100);
@@ -21,7 +19,7 @@ export const GET = async (request) => {
   const mine = params.get('mine') === '1';
 
   const filter = {};
-  if (mine) filter.creator = userId;
+  if (mine) filter.creator = user._id;
   if (tag) filter.tag = tag;
   if (q) {
     const pattern = new RegExp(escapeRegex(q), 'i');

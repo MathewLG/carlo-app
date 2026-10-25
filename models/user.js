@@ -17,6 +17,17 @@ const UserSchema = new Schema({
   image: {
     type: String,
   },
+  // Only scripts/make-admin.mjs sets 'admin'; no screen can grant it.
+  role: {
+    type: String,
+    enum: ['familiar', 'admin', 'carlo'],
+    default: 'familiar',
+  },
+  // Wrong family codes from this account in the current window.
+  joinAttempts: {
+    count: { type: Number, default: 0 },
+    windowStart: Date,
+  },
 });
 
 const User = models.User || model('User', UserSchema);
