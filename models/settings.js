@@ -24,6 +24,6 @@ const SettingsSchema = new Schema({
 const Settings = models.Settings || model('Settings', SettingsSchema);
 
 export const getSettings = () =>
-  Settings.findOneAndUpdate({ key: 'app' }, { $setOnInsert: { key: 'app' } }, { upsert: true, new: true });
+  Settings.findOneAndUpdate({ key: 'app' }, { $setOnInsert: { key: 'app' } }, { upsert: true, returnDocument: 'after' });
 
 export default Settings;
