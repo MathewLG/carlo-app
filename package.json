@@ -14,7 +14,7 @@
     "test:all": "npm run lint && npm run test:coverage && npm run build && npm run test:e2e"
   },
   "dependencies": {
-    "mongoose": "^8.24.7",
+    "mongoose": "^9.11.3",
     "next": "^16.4.3",
     "next-auth": "^4.24.15",
     "react": "^19.3.1",
