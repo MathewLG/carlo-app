@@ -79,7 +79,9 @@ export default function SingleMemory() {
   }
 
   const author = memory.creator?.username ?? 'Familia';
+  // Same rule as the API: the author or the admin can change a memory.
   const isOwner = memory.creator?._id && memory.creator._id === session?.user?.id;
+  const canChange = isOwner || session?.user?.role === 'admin';
 
   return (
     <article className="mx-auto mt-6 w-full max-w-2xl">
@@ -99,7 +101,7 @@ export default function SingleMemory() {
         </p>
       </div>
 
-      {isOwner && !confirming && (
+      {canChange && !confirming && (
         <div className="mt-8 flex flex-wrap gap-4">
           <Link href={`/memories/${id}/edit`} className="btn btn-outline">Editar</Link>
           <button type="button" className="btn btn-danger" onClick={() => setConfirming(true)}>
@@ -108,7 +110,7 @@ export default function SingleMemory() {
         </div>
       )}
 
-      {isOwner && confirming && (
+      {canChange && confirming && (
         <div role="alertdialog" aria-labelledby="confirm-title" className="mt-8 rounded-2xl border-2 border-danger bg-white p-5">
           <p id="confirm-title" className="font-display text-lg font-semibold">
             ¿Borrar este recuerdo? No se puede deshacer.

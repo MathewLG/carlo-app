@@ -1,6 +1,6 @@
 import GoogleProvider from 'next-auth/providers/google';
-import { getServerSession } from 'next-auth';
 import User from '@models/user';
+import Invite from '@models/invite';
 import { connectToDB } from '@utils/database';
 
 // Builds a username from the Google display name. Accents are stripped
@@ -31,6 +31,10 @@ export const authOptions = {
       if (sessionUser) {
         session.user.id = sessionUser._id.toString();
         session.user.username = sessionUser.username;
+        session.user.role = sessionUser.role;
+        // The pages use this to send people who are not on the list to /unirse;
+        // the API checks the list again on every request.
+        session.user.allowed = Boolean(await Invite.exists({ email: sessionUser.email.toLowerCase() }));
       }
       return session;
     },
@@ -55,8 +59,3 @@ export const authOptions = {
   },
 };
 
-// Returns the signed-in user's id, or null when there is no valid session.
-export const getSessionUserId = async () => {
-  const session = await getServerSession(authOptions);
-  return session?.user?.id ?? null;
-};

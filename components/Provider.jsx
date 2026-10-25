@@ -1,14 +1,11 @@
-"use client"
-import React from 'react'
-
+'use client';
 import { SessionProvider } from 'next-auth/react';
+import AccessGate from './AccessGate';
 
-const Provider = ({children, session}) => {
-  return (
-    <SessionProvider session ={session}>
-      {children}
-    </SessionProvider>
-  )
-}
+const Provider = ({ children, session }) => (
+  <SessionProvider session={session}>
+    <AccessGate>{children}</AccessGate>
+  </SessionProvider>
+);
 
-export default Provider
+export default Provider;

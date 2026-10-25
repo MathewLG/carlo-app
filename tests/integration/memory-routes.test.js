@@ -3,7 +3,8 @@ import Memory from '@models/memory';
 import { GET as listMemories } from '@/app/api/memory/route';
 import { POST as createMemory } from '@/app/api/memory/new/route';
 import { DELETE as deleteMemory, GET as getMemory, PATCH as editMemory } from '@/app/api/memory/[id]/route';
-import { makeMemory, makeUser } from '../fixtures/people';
+import { getServerSession } from 'next-auth';
+import { makeAdmin, makeMemory, makeUser } from '../fixtures/people';
 import { clearDatabase, request, routeParams, signInAs, signOut, startDatabase } from './setup';
 
 vi.mock('next-auth', async (importOriginal) => ({ ...(await importOriginal()), getServerSession: vi.fn() }));
@@ -143,6 +144,23 @@ describe('/api/memory/[id]', () => {
     expect((await Memory.findById(id)).memory).toBe('Tu primer día en casa');
   });
 
+  it("lets the admin edit someone else's memory and keeps the original author", async () => {
+    const rosa = await makeUser();
+    const memory = await makeMemory(rosa);
+    signInAs(await makeAdmin());
+    const id = memory._id.toString();
+
+    const response = await editMemory(
+      request(`/api/memory/${id}`, { method: 'PATCH', body: { memory: 'Corregido', tag: '#recuerdo' } }),
+      routeParams({ id }),
+    );
+
+    expect(response.status).toBe(200);
+    const saved = await Memory.findById(id);
+    expect(saved.memory).toBe('Corregido');
+    expect(saved.creator.toString()).toBe(rosa._id.toString());
+  });
+
   it('lets the author delete the memory', async () => {
     const rosa = await makeUser();
     const memory = await makeMemory(rosa);
@@ -154,4 +172,9 @@ describe('/api/memory/[id]', () => {
     expect(response.status).toBe(204);
     expect(await Memory.countDocuments()).toBe(0);
   });
+});
+
+it('refuses a session whose account no longer exists', async () => {
+  vi.mocked(getServerSession).mockResolvedValue({ user: { email: 'borrado@example.com' } });
+  expect((await listMemories(request('/api/memory'))).status).toBe(401);
 });

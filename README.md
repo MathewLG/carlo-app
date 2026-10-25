@@ -30,6 +30,15 @@ Tests never use real secrets or real data: the browser tests start their own dat
 
 Every change ships with tests, and a bug fix starts with a test that fails because of the bug.
 
+## One-off scripts
+
+Each names its database with `--db` (`carlo_app` is production) and only previews what it would do unless given `--apply`.
+
+```
+node --env-file=.env.local scripts/migrate-invites.mjs --db carlo_app           # put everyone with a memory on the allow list
+node --env-file=.env.local scripts/make-admin.mjs you@gmail.com --db carlo_app  # make an account the admin
+```
+
 ## CI
 
 GitHub Actions runs `.github/workflows/ci.yml` on every pull request. `main` only accepts a merge when the `ci-passed` check and the preview smoke test pass. `smoke.yml` checks each Vercel deployment from outside, and `weekly.yml` reruns everything on Mondays.
