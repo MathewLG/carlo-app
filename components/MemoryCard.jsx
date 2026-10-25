@@ -1,13 +1,17 @@
 import Link from 'next/link';
 import Avatar from './Avatar';
 import { memoryDate, formatDate } from '@utils/format';
+import { ageAt } from '@utils/age';
 
 const PREVIEW_LENGTH = 280;
 
-const MemoryCard = ({ memory, onTagClick }) => {
+// birthDate: Carlo's, to show his age on the day; null hides it.
+const MemoryCard = ({ memory, onTagClick, birthDate = null }) => {
   // A memory can outlive its author's account, so creator may be missing.
   const author = memory.creator?.username ?? 'Familia';
   const isLong = memory.memory.length > PREVIEW_LENGTH;
+  const date = memoryDate(memory);
+  const age = ageAt(birthDate, date);
   const text = isLong ? `${memory.memory.substring(0, PREVIEW_LENGTH).trimEnd()}…` : memory.memory;
 
   return (
@@ -16,7 +20,10 @@ const MemoryCard = ({ memory, onTagClick }) => {
         <Avatar image={memory.creator?.image} name={author} />
         <div>
           <p className="font-display font-semibold leading-tight">{author}</p>
-          <p className="text-sm text-ink-soft">{formatDate(memoryDate(memory))}</p>
+          <p className="text-sm text-ink-soft">
+            {formatDate(date)}
+            {age && <> · {age}</>}
+          </p>
         </div>
       </header>
 

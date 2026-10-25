@@ -178,3 +178,65 @@ it('refuses a session whose account no longer exists', async () => {
   vi.mocked(getServerSession).mockResolvedValue({ user: { email: 'borrado@example.com' } });
   expect((await listMemories(request('/api/memory'))).status).toBe(401);
 });
+
+describe('when a memory happened', () => {
+  it('saves the day the author gives, at noon UTC', async () => {
+    signInAs(await makeUser());
+    const response = await createMemory(
+      request('/api/memory/new', { method: 'POST', body: { memory: 'Tus primeros pasos', tag: '#m', happenedAt: '2024-06-02' } }),
+    );
+    expect(response.status).toBe(201);
+    expect((await Memory.findOne()).happenedAt.toISOString()).toBe('2024-06-02T12:00:00.000Z');
+  });
+
+  it('leaves it empty when the author does not say', async () => {
+    signInAs(await makeUser());
+    await createMemory(request('/api/memory/new', { method: 'POST', body: { memory: 'Hoy', tag: '#m' } }));
+    expect((await Memory.findOne()).happenedAt).toBeUndefined();
+  });
+
+  it('refuses a future day', async () => {
+    signInAs(await makeUser());
+    const response = await createMemory(
+      request('/api/memory/new', { method: 'POST', body: { memory: 'Mañana', tag: '#m', happenedAt: '2999-01-01' } }),
+    );
+    expect(response.status).toBe(400);
+    expect(await Memory.countDocuments()).toBe(0);
+  });
+
+  it('lets an edit set the day, and clearing it goes back to the day it was written', async () => {
+    const rosa = await makeUser();
+    const memory = await makeMemory(rosa);
+    signInAs(rosa);
+    const id = memory._id.toString();
+    const edit = (happenedAt) =>
+      editMemory(
+        request(`/api/memory/${id}`, { method: 'PATCH', body: { memory: 'Editado', tag: '#m', happenedAt } }),
+        routeParams({ id }),
+      );
+
+    await edit('2023-12-24');
+    expect((await Memory.findById(id)).happenedAt.toISOString()).toBe('2023-12-24T12:00:00.000Z');
+    await edit('');
+    expect((await Memory.findById(id)).happenedAt).toBeUndefined();
+  });
+
+  it("lets the admin set the real day on someone else's older memory", async () => {
+    const rosa = await makeUser();
+    const memory = await makeMemory(rosa);
+    signInAs(await makeAdmin());
+    const id = memory._id.toString();
+
+    await editMemory(
+      request(`/api/memory/${id}`, {
+        method: 'PATCH',
+        body: { memory: memory.memory, tag: memory.tag, happenedAt: '2023-07-04' },
+      }),
+      routeParams({ id }),
+    );
+
+    const saved = await Memory.findById(id);
+    expect(saved.happenedAt.toISOString()).toBe('2023-07-04T12:00:00.000Z');
+    expect(saved.creator.toString()).toBe(rosa._id.toString());
+  });
+});

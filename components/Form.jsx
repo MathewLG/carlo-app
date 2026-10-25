@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { MAX_MEMORY_LENGTH, MAX_TAG_LENGTH } from '@utils/validate';
+import { todayString } from '@utils/dates';
 
 const Form = ({ title, description, submitLabel, cancelHref, post, setPost, submitting, handleSubmit, error }) => (
   <section className="mx-auto mt-6 w-full max-w-2xl">
@@ -32,6 +33,18 @@ const Form = ({ title, description, submitLabel, cancelHref, post, setPost, subm
           maxLength={MAX_TAG_LENGTH}
           placeholder="#categoria"
           required
+          className="field"
+        />
+      </label>
+
+      <label>
+        <span className="label">¿Cuándo pasó?</span>{' '}
+        <span className="text-ink-soft">(opcional; déjalo vacío si fue hoy)</span>
+        <input
+          type="date"
+          value={post.happenedAt ?? ''}
+          onChange={(e) => setPost({ ...post, happenedAt: e.target.value })}
+          max={todayString()}
           className="field"
         />
       </label>

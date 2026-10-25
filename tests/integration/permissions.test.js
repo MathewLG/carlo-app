@@ -5,6 +5,7 @@ import { DELETE as deleteMemory, GET as getMemory, PATCH as editMemory } from '@
 import { POST as join } from '@/app/api/join/route';
 import { DELETE as removeFamily, GET as listFamily, POST as addFamily } from '@/app/api/admin/family/route';
 import { PUT as setCode } from '@/app/api/admin/join-code/route';
+import { GET as getSettings, PATCH as updateSettings } from '@/app/api/settings/route';
 import { hashCode } from '@utils/joinCode';
 import Settings from '@models/settings';
 import { PERMISSIONS, ROLES } from '../fixtures/permissions';
@@ -33,6 +34,9 @@ const ACTIONS = {
     removeFamily(request('/api/admin/family', { method: 'DELETE', body: { email: other.email } })),
   'change the family code': () =>
     setCode(request('/api/admin/join-code', { method: 'PUT', body: { code: 'otro código largo' } })),
+  "see Carlo's birth date": () => getSettings(),
+  "change Carlo's birth date": () =>
+    updateSettings(request('/api/settings', { method: 'PATCH', body: { carloBirthDate: '2023-05-15' } })),
 };
 
 let stopDatabase;

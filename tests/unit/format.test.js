@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { formatDate, memoryDate } from '@utils/format';
 
 describe('memoryDate', () => {
+  it('prefers the day it happened over the day it was written', () => {
+    const memory = { _id: '65d1a500aaaaaaaaaaaaaaaa', createdAt: '2026-10-25T18:00:00.000Z', happenedAt: '2025-05-01T12:00:00.000Z' };
+    expect(memoryDate(memory).toISOString()).toBe('2025-05-01T12:00:00.000Z');
+  });
+
   it('uses createdAt when the memory has it', () => {
     const memory = { _id: '000000000000000000000000', createdAt: '2026-10-25T18:00:00.000Z' };
     expect(memoryDate(memory).toISOString()).toBe('2026-10-25T18:00:00.000Z');
@@ -15,6 +20,10 @@ describe('memoryDate', () => {
 });
 
 describe('formatDate', () => {
+  it('shows the Mexico City day for a late-evening moment', () => {
+    expect(formatDate(new Date('2026-10-26T04:30:00Z'))).toBe('25 de octubre de 2026');
+  });
+
   it('writes the date in Mexican Spanish', () => {
     expect(formatDate(new Date('2026-10-25T18:00:00Z'))).toBe('25 de octubre de 2026');
   });

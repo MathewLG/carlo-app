@@ -5,11 +5,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Avatar from '@components/Avatar';
 import { memoryDate, formatDate } from '@utils/format';
+import { ageAt } from '@utils/age';
+import useCarloBirthDate from '@components/useCarloBirthDate';
 
 export default function SingleMemory() {
   const { memory: id } = useParams();
   const router = useRouter();
   const { data: session, status } = useSession();
+  const birthDate = useCarloBirthDate();
   const [memory, setMemory] = useState(null);
   const [loadState, setLoadState] = useState('loading'); // loading | ready | missing | error
   const [confirming, setConfirming] = useState(false);
@@ -93,6 +96,9 @@ export default function SingleMemory() {
           <div>
             <p className="font-display text-lg font-semibold leading-tight">{author}</p>
             <p className="text-ink-soft">{formatDate(memoryDate(memory))}</p>
+            {ageAt(birthDate, memoryDate(memory)) && (
+              <p className="text-ink-soft">{ageAt(birthDate, memoryDate(memory))}</p>
+            )}
           </div>
         </header>
         <p className="mt-6 whitespace-pre-line text-lg leading-relaxed">{memory.memory}</p>

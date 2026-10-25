@@ -3,12 +3,13 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Form from '@components/Form';
+import { toDayString } from '@utils/dates';
 
 export default function EditMemory() {
   const { memory: id } = useParams();
   const router = useRouter();
   const { data: session, status } = useSession();
-  const [post, setPost] = useState({ memory: '', tag: '' });
+  const [post, setPost] = useState({ memory: '', tag: '', happenedAt: '' });
   const [loadState, setLoadState] = useState('loading'); // loading | ready | forbidden | missing | error
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -22,7 +23,11 @@ export default function EditMemory() {
         const memory = await response.json();
         const canChange = memory.creator?._id === session.user.id || session.user.role === 'admin';
         if (!canChange) return setLoadState('forbidden');
-        setPost({ memory: memory.memory, tag: memory.tag });
+        setPost({
+          memory: memory.memory,
+          tag: memory.tag,
+          happenedAt: memory.happenedAt ? toDayString(new Date(memory.happenedAt)) : '',
+        });
         setLoadState('ready');
       })
       .catch((err) => {

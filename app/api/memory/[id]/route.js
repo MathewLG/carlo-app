@@ -51,6 +51,7 @@ export const PATCH = async (request, { params }) => {
     // The author stays the same even when the admin edits.
     memory.memory = input.memory;
     memory.tag = input.tag;
+    memory.happenedAt = input.happenedAt ?? undefined;
     await memory.save();
     return Response.json(memory, { status: 200 });
   } catch (error) {

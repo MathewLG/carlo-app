@@ -83,3 +83,10 @@ export const watchConsoleErrors = (page) => {
   page.on('pageerror', (error) => errors.push(error.message));
   return errors;
 };
+
+// App settings, such as Carlo's birth date; days are stored at noon UTC.
+export const seedSettings = async (settings) => {
+  await (await db()).collection('settings').insertOne({ key: 'app', ...settings });
+};
+
+export const day = (value) => new Date(`${value}T12:00:00Z`);

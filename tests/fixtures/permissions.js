@@ -19,4 +19,6 @@ export const PERMISSIONS = [
   { action: 'add someone to the family', visitante: 401, pendiente: 403, autor: 403, familiar: 403, admin: 201 },
   { action: 'remove someone from the family', visitante: 401, pendiente: 403, autor: 403, familiar: 403, admin: 204 },
   { action: 'change the family code', visitante: 401, pendiente: 403, autor: 403, familiar: 403, admin: 200 },
+  { action: "see Carlo's birth date", visitante: 401, pendiente: 403, autor: 200, familiar: 200, admin: 200 },
+  { action: "change Carlo's birth date", visitante: 401, pendiente: 403, autor: 403, familiar: 403, admin: 200 },
 ];
