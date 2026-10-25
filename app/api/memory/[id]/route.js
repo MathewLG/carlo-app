@@ -26,7 +26,7 @@ const isOwner = (memory, userId) => memory.creator?._id?.toString() === userId;
 
 export const GET = async (_request, { params }) => {
   try {
-    const { response, memory } = await loadMemory(params.id);
+    const { response, memory } = await loadMemory((await params).id);
     if (response) return response;
     return Response.json(memory, { status: 200 });
   } catch (error) {
@@ -37,7 +37,7 @@ export const GET = async (_request, { params }) => {
 
 export const PATCH = async (request, { params }) => {
   try {
-    const { response, userId, memory } = await loadMemory(params.id);
+    const { response, userId, memory } = await loadMemory((await params).id);
     if (response) return response;
     if (!isOwner(memory, userId)) {
       return Response.json({ error: 'Solo quien escribió este recuerdo puede editarlo' }, { status: 403 });
@@ -64,7 +64,7 @@ export const PATCH = async (request, { params }) => {
 
 export const DELETE = async (_request, { params }) => {
   try {
-    const { response, userId, memory } = await loadMemory(params.id);
+    const { response, userId, memory } = await loadMemory((await params).id);
     if (response) return response;
     if (!isOwner(memory, userId)) {
       return Response.json({ error: 'Solo quien escribió este recuerdo puede borrarlo' }, { status: 403 });

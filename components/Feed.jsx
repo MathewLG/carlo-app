@@ -18,9 +18,12 @@ const Feed = ({ mine = false }) => {
   const [searchText, setSearchText] = useState('');
   const [query, setQuery] = useState('');
   const [tag, setTag] = useState('');
-  const [memories, setMemories] = useState([]);
-  const [loadState, setLoadState] = useState('loading'); // loading | ready | error
   const [reloadKey, setReloadKey] = useState(0);
+  // The last finished request. Until the current one finishes, the feed shows loading.
+  const [result, setResult] = useState({ key: null, state: 'loading', memories: [] });
+  const requestKey = `${query}|${tag}|${mine}|${reloadKey}`;
+  const loadState = result.key === requestKey ? result.state : 'loading'; // loading | ready | error
+  const memories = result.memories;
 
   // Wait until typing pauses before searching, so each key press is not a request.
   useEffect(() => {
@@ -37,24 +40,20 @@ const Feed = ({ mine = false }) => {
     if (tag) params.set('tag', tag);
     if (mine) params.set('mine', '1');
 
-    setLoadState('loading');
     fetch(`/api/memory?${params}`, { signal: controller.signal })
       .then((response) => {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return response.json();
       })
-      .then((data) => {
-        setMemories(data);
-        setLoadState('ready');
-      })
+      .then((data) => setResult({ key: requestKey, state: 'ready', memories: data }))
       .catch((error) => {
         if (error.name === 'AbortError') return;
         console.error('Could not load memories', error);
-        setLoadState('error');
+        setResult({ key: requestKey, state: 'error', memories: [] });
       });
 
     return () => controller.abort();
-  }, [status, query, tag, mine, reloadKey]);
+  }, [status, query, tag, mine, requestKey]);
 
   if (status === 'loading') {
     return (

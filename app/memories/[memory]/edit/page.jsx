@@ -1,11 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Form from '@components/Form';
 
-export default function EditMemory({ params }) {
-  const id = params.memory;
+export default function EditMemory() {
+  const { memory: id } = useParams();
   const router = useRouter();
   const { data: session, status } = useSession();
   const [post, setPost] = useState({ memory: '', tag: '' });

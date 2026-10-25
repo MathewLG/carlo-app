@@ -1,0 +1,44 @@
+name: Smoke
+
+# Vercel reports each finished deployment back to GitHub; this checks the
+# deployed site from outside, signed out, so it needs no secrets but the bypass.
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  smoke:
+    name: Smoke (${{ github.event.deployment_status.environment }})
+    if: github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+    env:
+      SMOKE_URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test --project=chromium
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: smoke-report
+          path: playwright-report/
+          retention-days: 14
+      # A failing production check opens an issue, which emails the repo owner.
+      - if: failure() && github.event.deployment_status.environment == 'Production'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh issue create --repo "$GITHUB_REPOSITORY"
+          --title "carlo-app.com failed its smoke test"
+          --body "The smoke test failed against $SMOKE_URL after deploying ${{ github.event.deployment.sha }}. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"

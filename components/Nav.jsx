@@ -9,16 +9,17 @@ import Avatar from './Avatar';
 const Nav = () => {
   const { data: session, status } = useSession();
   const pathname = usePathname();
-  const [menuOpen, setMenuOpen] = useState(false);
+  // The menu remembers the page it was opened on, so navigating closes it.
+  const [menuOpenOn, setMenuOpenOn] = useState(null);
+  const menuOpen = menuOpenOn === pathname;
   const menuRef = useRef(null);
   const user = session?.user;
 
-  // Close the mobile menu on navigation, Escape, or a tap outside it.
-  useEffect(() => setMenuOpen(false), [pathname]);
+  // Close the mobile menu on Escape or a tap outside it.
   useEffect(() => {
     if (!menuOpen) return;
-    const onKey = (e) => e.key === 'Escape' && setMenuOpen(false);
-    const onClick = (e) => menuRef.current && !menuRef.current.contains(e.target) && setMenuOpen(false);
+    const onKey = (e) => e.key === 'Escape' && setMenuOpenOn(null);
+    const onClick = (e) => menuRef.current && !menuRef.current.contains(e.target) && setMenuOpenOn(null);
     window.addEventListener('keydown', onKey);
     window.addEventListener('mousedown', onClick);
     return () => {
@@ -68,7 +69,7 @@ const Nav = () => {
               aria-label="Menú"
               aria-expanded={menuOpen}
               aria-controls="mobile-menu"
-              onClick={() => setMenuOpen((open) => !open)}
+              onClick={() => setMenuOpenOn(menuOpen ? null : pathname)}
               className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full"
             >
               <Avatar image={user.image} name={user.username || user.name} />

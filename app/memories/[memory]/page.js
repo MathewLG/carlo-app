@@ -1,13 +1,13 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Avatar from '@components/Avatar';
 import { memoryDate, formatDate } from '@utils/format';
 
-export default function SingleMemory({ params }) {
-  const id = params.memory;
+export default function SingleMemory() {
+  const { memory: id } = useParams();
   const router = useRouter();
   const { data: session, status } = useSession();
   const [memory, setMemory] = useState(null);

@@ -5,7 +5,7 @@ import { connectToDB } from '@utils/database';
 
 // Builds a username from the Google display name. Accents are stripped
 // before anything else so "José" becomes "jose", not "jos".
-const makeUsername = (profile) => {
+export const makeUsername = (profile) => {
   const fromName = (profile.name || '')
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
