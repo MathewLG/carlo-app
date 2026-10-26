@@ -9,6 +9,10 @@ import { GET as getSettings, PATCH as updateSettings } from '@/app/api/settings/
 import { POST as uploadPhoto } from '@/app/api/memory/[id]/photo/route';
 import { GET as getMedia } from '@/app/api/media/[id]/[kind]/route';
 import { GET as getBackup } from '@/app/api/admin/backup/route';
+import { GET as getTimeline } from '@/app/api/timeline/route';
+import { POST as reorganize } from '@/app/api/timeline/rebuild/route';
+import { PATCH as editEvent } from '@/app/api/timeline/events/[id]/route';
+import Event from '@models/event';
 import { saveFile } from '@utils/services/storage';
 import { FILES } from '../fixtures/files';
 import { hashCode } from '@utils/joinCode';
@@ -46,6 +50,10 @@ const ACTIONS = {
     uploadPhoto(uploadRequest(`/api/memory/${id}/photo`, { file: FILES.jpeg }), routeParams({ id })),
   'see a photo': ({ id }) => getMedia(request(`/api/media/${id}/photo`), routeParams({ id, kind: 'photo' })),
   'download the backup': () => getBackup(),
+  'see the timeline': () => getTimeline(),
+  'rename a moment': ({ event }) =>
+    editEvent(request(`/api/timeline/events/${event._id}`, { method: 'PATCH', body: { title: 'Nuevo nombre' } }), routeParams({ id: String(event._id) })),
+  'reorganize the timeline': () => reorganize(),
 };
 
 let stopDatabase;
@@ -68,13 +76,14 @@ describe.each(PERMISSIONS)('$action', (row) => {
     await memory.save();
     await saveFile(memory.photo.path, FILES.jpeg.bytes, 'image/jpeg');
     const other = await makeUser();
+    const event = await Event.create({ title: 'Mayo', memoryIds: [memory._id], startDay: '2024-05-01', endDay: '2024-05-01', source: 'mes' });
     if (role === 'visitante') signOut();
     if (role === 'pendiente') signInAs(await makeUser({ invited: false }));
     if (role === 'autor') signInAs(author);
     if (role === 'familiar') signInAs(await makeUser());
     if (role === 'admin') signInAs(await makeAdmin());
 
-    const response = await ACTIONS[row.action]({ id: memory._id.toString(), other });
+    const response = await ACTIONS[row.action]({ id: memory._id.toString(), other, event });
 
     expect(response.status).toBe(row[role]);
   });

@@ -93,3 +93,13 @@ test('an empty search offers to show everything again', async ({ page, context }
   await page.getByRole('button', { name: 'Ver todos los recuerdos' }).click();
   await expect(page.locator('article')).toHaveCount(1);
 });
+
+test('tablets get the menu button, since the full set of links would wrap', async ({ page, context }) => {
+  await signIn(context, await seedUser({ role: 'admin' }));
+  await page.setViewportSize({ width: 800, height: 900 });
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: 'Menú' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Mis recuerdos' })).toBeHidden();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+});

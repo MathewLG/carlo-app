@@ -38,3 +38,12 @@ test('a tap outside closes the menu', async ({ page }) => {
   await page.mouse.click(8, 600);
   await expect(page.locator('#mobile-menu')).toHaveCount(0);
 });
+
+test('the timeline fits a phone screen, with the menu link', async ({ page }) => {
+  await page.getByRole('button', { name: 'Menú' }).click();
+  await page.locator('#mobile-menu').getByRole('link', { name: 'Línea del tiempo' }).click();
+  await expect(page).toHaveURL('/linea-del-tiempo');
+  await expect(page.getByRole('heading', { name: 'Línea del tiempo' })).toBeVisible();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+});

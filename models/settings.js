@@ -16,6 +16,15 @@ const SettingsSchema = new Schema({
     type: Boolean,
     default: false,
   },
+  // The timeline is rebuilt after memories change: dirty marks that it is
+  // out of date, builtAt limits rebuilds to one a minute, and buildingUntil
+  // keeps two rebuilds from running at once.
+  timelineDirty: {
+    type: Boolean,
+    default: true,
+  },
+  timelineBuiltAt: Date,
+  timelineBuildingUntil: Date,
   // Wrong codes across all accounts in the current window.
   joinFailures: {
     count: { type: Number, default: 0 },

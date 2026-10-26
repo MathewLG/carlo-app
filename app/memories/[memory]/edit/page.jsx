@@ -10,7 +10,7 @@ export default function EditMemory() {
   const { memory: id } = useParams();
   const router = useRouter();
   const { data: session, status } = useSession();
-  const [post, setPost] = useState({ memory: '', tag: '', happenedAt: '' });
+  const [post, setPost] = useState({ memory: '', tag: '', happenedAt: '', milestone: '' });
   const [loadState, setLoadState] = useState('loading'); // loading | ready | forbidden | missing | error
   const [submitting, setSubmitting] = useState(false);
   // A new memory whose photo or voice note failed lands here with ?aviso=<why>.
@@ -33,6 +33,7 @@ export default function EditMemory() {
           memory: memory.memory,
           tag: memory.tag,
           happenedAt: memory.happenedAt ? toDayString(new Date(memory.happenedAt)) : '',
+          milestone: memory.milestone ?? '',
         });
         setMedia(emptyMedia(memory));
         setLoadState('ready');

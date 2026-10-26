@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { MAX_MEMORY_LENGTH, MAX_TAG_LENGTH } from '@utils/validate';
 import { todayString } from '@utils/dates';
 import MediaFields from './media/MediaFields';
+import MilestoneField from './MilestoneField';
 
 // media/setMedia: the photo and voice note, from emptyMedia() in media/prepareMedia.js.
 const Form = ({ title, description, submitLabel, cancelHref, post, setPost, media, setMedia, submitting, handleSubmit, error }) => (
@@ -50,6 +51,8 @@ const Form = ({ title, description, submitLabel, cancelHref, post, setPost, medi
           className="field"
         />
       </label>
+
+      <MilestoneField value={post.milestone ?? ''} onChange={(milestone) => setPost({ ...post, milestone })} />
 
       {media && <MediaFields media={media} setMedia={setMedia} />}
 

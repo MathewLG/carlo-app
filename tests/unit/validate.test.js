@@ -7,6 +7,7 @@ describe('parseMemoryInput', () => {
       memory: 'Hola Carlo',
       tag: '#mensaje',
       happenedAt: null,
+      milestone: '',
     });
   });
 
