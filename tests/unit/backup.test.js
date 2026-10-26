@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { buildBackupFiles, buildBackupHtml } from '@utils/backup';
+import { buildBackupFiles, buildBackupHtml, buildSealedHtml } from '@utils/backup';
 
 const backup = {
   exportedAt: '2026-10-25T18:00:00.000Z',
@@ -57,6 +57,18 @@ describe('buildBackupHtml', () => {
     expect(html).not.toContain('Diccionario');
   });
 
+  it('keeps sealed letters on their own page, each with the day it opens', () => {
+    const letter = { id: 'c3', author: 'abuelarosa', day: '2026-10-25', tag: '#carta', memory: 'Para cuando cumplas 15', unlockAt: '2038-05-15' };
+    const withSealed = { ...backup, sealed: [letter] };
+    const main = buildBackupHtml(withSealed);
+    expect(main).toContain('Hay 1 carta con candado en cartas-con-candado.html');
+    expect(main).not.toContain('Para cuando cumplas 15');
+    const sealedPage = buildSealedHtml(withSealed);
+    expect(sealedPage).toContain('Estas cartas todavía no deben abrirse.');
+    expect(sealedPage).toContain('Se abre el 15 de mayo de 2038');
+    expect(sealedPage).toContain('Para cuando cumplas 15');
+  });
+
   it('leaves out ages when no birth date was set', () => {
     expect(buildBackupHtml({ ...backup, carloBirthDate: null })).not.toContain('Carlo tenía');
   });
@@ -78,5 +90,23 @@ describe('buildBackupFiles', () => {
     expect(JSON.parse(new TextDecoder().decode(files['recuerdos.json']))).toEqual(backup);
     expect(fetchFile).toHaveBeenCalledTimes(2);
     expect(progress).toHaveBeenLastCalledWith(2, 2);
+  });
+});
+
+describe('buildBackupFiles with sealed letters', () => {
+  it('adds their page and their files from their own folder', async () => {
+    const sealed = [
+      {
+        id: 'c3',
+        author: 'abuelarosa',
+        day: '2026-10-25',
+        tag: '#carta',
+        memory: 'Para cuando cumplas 15',
+        unlockAt: '2038-05-15',
+        voice: { url: '/api/media/c3/voice?v=9', name: 'cartas-con-candado/media/2026-10-25-c3-voz.m4a' },
+      },
+    ];
+    const files = await buildBackupFiles({ ...backup, sealed }, async (url) => new TextEncoder().encode(url));
+    expect(Object.keys(files)).toEqual(expect.arrayContaining(['cartas-con-candado.html', 'cartas-con-candado/media/2026-10-25-c3-voz.m4a']));
   });
 });

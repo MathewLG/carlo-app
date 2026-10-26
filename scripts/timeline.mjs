@@ -17,6 +17,7 @@ import './aliases.mjs';
 import { connect, parseArgs } from './lib.mjs';
 
 const { checkGroups, planTimeline, timelineItems, withSessionGroups } = await import('@utils/timeline');
+const { isLocked } = await import('@utils/letters');
 
 const BUILD_LOCK_MS = 3 * 60 * 1000;
 const { apply, db, rest } = parseArgs();
@@ -32,7 +33,7 @@ const eventsDb = conn.collection('events');
 
 const load = async () => {
   const [memories, events, settings, firstWords] = await Promise.all([
-    conn.collection('memories').find({}, { projection: { memory: 1, tag: 1, happenedAt: 1, createdAt: 1, milestone: 1 } }).toArray(),
+    conn.collection('memories').find({}, { projection: { memory: 1, tag: 1, happenedAt: 1, createdAt: 1, milestone: 1, unlockAt: 1 } }).toArray(),
     eventsDb.find({ $or: [{ locked: true }, { source: 'claude' }] }).toArray(),
     settingsDb.findOne({ key: 'app' }),
     conn.collection('words').find({ firstWord: true }, { projection: { word: 1, saidAt: 1 } }).toArray(),
@@ -53,7 +54,9 @@ try {
 
   if (command === 'export') {
     const skip = new Set(state.events.filter((e) => e.locked || !all).flatMap((e) => e.memoryIds.map(String)));
-    const items = timelineItems(state.memories, state.birthDate).filter((i) => !i.milestone && !skip.has(i.id));
+    // Sealed letters are never exported: nobody reads them before their day.
+    const open = state.memories.filter((m) => !isLocked(m));
+    const items = timelineItems(open, state.birthDate).filter((i) => !i.milestone && !skip.has(i.id));
     const named = state.events
       .filter((e) => !e.locked && e.source === 'claude')
       .map((e) => ({ title: e.title, memoryIds: e.memoryIds.map(String), startDay: e.startDay, endDay: e.endDay }));

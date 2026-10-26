@@ -7,6 +7,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import Event from '@models/event';
 import Settings from '@models/settings';
 import Word from '@models/word';
+import Memory from '@models/memory';
 import { makeMemory, makeUser } from '../fixtures/people';
 import { clearDatabase, startDatabase } from './setup';
 
@@ -107,6 +108,12 @@ describe('scripts/timeline.mjs', () => {
     const word = await Event.findOne({ source: 'palabra' });
     expect(word.toObject()).toMatchObject({ title: 'Dijiste «awa»', startDay: '2024-03-01', memoryIds: [] });
     expect(word.wordIds).toHaveLength(1);
+  });
+
+  it('never exports a sealed letter before its day', async () => {
+    const { xmas } = await seed();
+    await Memory.updateOne({ _id: xmas._id }, { unlockAt: new Date('2099-01-01T12:00:00Z') });
+    expect((await exportItems()).items.map((i) => i.text)).toEqual(['Tu fiesta', 'Los regalos']);
   });
 
   it('saves even before the site has stored any settings', async () => {

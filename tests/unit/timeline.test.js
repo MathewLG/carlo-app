@@ -68,6 +68,14 @@ describe('planTimeline', () => {
     ]);
   });
 
+  it('leaves sealed letters out until they open, then places them on the day they open', () => {
+    const letter = memory('l', '2024-01-01', { unlockAt: day('2030-06-01') });
+    const before = planTimeline({ memories: [letter], now: new Date('2030-05-31T18:00:00Z') });
+    expect(before).toEqual([]);
+    const after = planTimeline({ memories: [letter], now: new Date('2030-06-01T18:00:00Z') });
+    expect(after.map((e) => [e.title, e.startDay])).toEqual([['Junio de 2030', '2030-06-01']]);
+  });
+
   it('returns nothing for no memories', () => {
     expect(planTimeline({ memories: [] })).toEqual([]);
   });

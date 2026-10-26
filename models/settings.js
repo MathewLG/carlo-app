@@ -25,6 +25,13 @@ const SettingsSchema = new Schema({
   },
   timelineBuiltAt: Date,
   timelineBuildingUntil: Date,
+  // The admin's monthly email: on unless turned off; lastReminderMonth
+  // ('YYYY-MM') is the month already sent, so it goes out once.
+  monthlyReminder: {
+    type: Boolean,
+    default: true,
+  },
+  lastReminderMonth: String,
   // Wrong codes across all accounts in the current window.
   joinFailures: {
     count: { type: Number, default: 0 },

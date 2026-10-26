@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation';
 
 import Form from '@components/Form';
 import { emptyMedia, saveMedia } from '@components/media/prepareMedia';
+import { emptyLock, memoryBody } from '@components/LockField';
 
 const CreateMemory = () => {
   const router = useRouter();
   const { status } = useSession();
   const [submitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [post, setPost] = useState({ memory: '', tag: '', happenedAt: '', milestone: '' });
+  const [post, setPost] = useState({ memory: '', tag: '', happenedAt: '', milestone: '', lock: emptyLock() });
   const [media, setMedia] = useState(emptyMedia);
 
   const createMemory = async (e) => {
@@ -23,7 +24,7 @@ const CreateMemory = () => {
       const response = await fetch('/api/memory/new', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(post),
+        body: JSON.stringify(memoryBody(post)),
       });
 
       if (response.ok) {

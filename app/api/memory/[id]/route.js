@@ -1,6 +1,8 @@
 import { isValidObjectId } from 'mongoose';
 import { connectToDB } from '@utils/database';
-import { canEdit, requireUser } from '@utils/access';
+import { canChange, canEdit, redactLocked, requireUser } from '@utils/access';
+import { isLocked, parseLock } from '@utils/letters';
+import { getSettings } from '@models/settings';
 import { parseMemoryInput } from '@utils/validate';
 import { deleteFiles } from '@utils/services/storage';
 import { timelineChanged } from '@utils/timelineBuild';
@@ -28,9 +30,9 @@ const loadMemory = async (id) => {
 
 export const GET = async (_request, { params }) => {
   try {
-    const { response, memory } = await loadMemory((await params).id);
+    const { response, user, memory } = await loadMemory((await params).id);
     if (response) return response;
-    return Response.json(memory, { status: 200 });
+    return Response.json(redactLocked(memory, user), { status: 200 });
   } catch (error) {
     console.error('GET /api/memory/[id] failed', error);
     return Response.json({ error: 'No se pudo cargar el recuerdo' }, { status: 500 });
@@ -41,8 +43,9 @@ export const PATCH = async (request, { params }) => {
   try {
     const { response, user, memory } = await loadMemory((await params).id);
     if (response) return response;
-    if (!canEdit(user, memory)) {
-      return Response.json({ error: 'Solo quien escribió este recuerdo puede editarlo' }, { status: 403 });
+    if (!canChange(user, memory)) {
+      const error = isLocked(memory) ? 'Esta carta tiene candado: solo quien la escribió puede abrirla antes de su fecha' : 'Solo quien escribió este recuerdo puede editarlo';
+      return Response.json({ error }, { status: 403 });
     }
 
     let body;
@@ -53,12 +56,19 @@ export const PATCH = async (request, { params }) => {
     }
     const input = parseMemoryInput(body);
     if (input.error) return Response.json({ error: input.error }, { status: 400 });
+    // Without a lock field the lock stays as it is (an opened letter keeps its day).
+    const lock = 'lock' in body ? parseLock(body.lock, (await getSettings()).carloBirthDate) : null;
+    if (lock?.error) return Response.json({ error: lock.error }, { status: 400 });
 
     // The author stays the same even when the admin edits.
     memory.memory = input.memory;
     memory.tag = input.tag;
     memory.happenedAt = input.happenedAt ?? undefined;
     memory.milestone = input.milestone || undefined;
+    if (lock) {
+      memory.unlockAt = lock.unlockAt ?? undefined;
+      memory.lockAge = lock.lockAge ?? undefined;
+    }
     await memory.save();
     await timelineChanged();
     return Response.json(memory, { status: 200 });

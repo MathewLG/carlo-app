@@ -23,12 +23,12 @@ afterEach(() => vi.useRealTimers());
 
 describe('/api/settings', () => {
   it('has no birth date until the admin sets one', async () => {
-    expect(await (await getSettings()).json()).toEqual({ carloBirthDate: null });
+    expect(await (await getSettings()).json()).toEqual({ carloBirthDate: null, monthlyReminder: true });
   });
 
   it('saves the birth date as a day, and the family reads it back the same', async () => {
     const response = await setBirthDate('2023-05-15');
-    expect(await response.json()).toEqual({ carloBirthDate: '2023-05-15' });
+    expect(await response.json()).toEqual({ carloBirthDate: '2023-05-15', monthlyReminder: true });
     expect((await Settings.findOne()).carloBirthDate.toISOString()).toBe('2023-05-15T12:00:00.000Z');
 
     signInAs(await makeUser());
@@ -51,6 +51,18 @@ describe('/api/settings', () => {
     const response = await setBirthDate(value);
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ error });
+  });
+
+  it('turns the monthly email off and on without touching the birth date; only the admin sees it', async () => {
+    await setBirthDate('2023-05-15');
+    const off = await updateSettings(request('/api/settings', { method: 'PATCH', body: { monthlyReminder: false } }));
+    expect(await off.json()).toEqual({ carloBirthDate: '2023-05-15', monthlyReminder: false });
+    expect((await Settings.findOne()).monthlyReminder).toBe(false);
+    const bad = await updateSettings(request('/api/settings', { method: 'PATCH', body: { monthlyReminder: 'no' } }));
+    expect(bad.status).toBe(400);
+
+    signInAs(await makeUser());
+    expect(await (await getSettings()).json()).toEqual({ carloBirthDate: '2023-05-15' });
   });
 
   it('refuses a body that is not JSON', async () => {

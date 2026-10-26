@@ -10,6 +10,8 @@ import { ageAt } from '@utils/age';
 import useCarloBirthDate from '@components/useCarloBirthDate';
 import InstantPhoto from '@components/media/InstantPhoto';
 import VoiceNote from '@components/media/VoiceNote';
+import SealedEnvelope from '@components/SealedEnvelope';
+import { LetterNote } from '@components/LetterNote';
 
 export default function SingleMemory() {
   const { memory: id } = useParams();
@@ -88,43 +90,52 @@ export default function SingleMemory() {
   // Same rule as the API: the author or the admin can change a memory.
   const isOwner = memory.creator?._id && memory.creator._id === session?.user?.id;
   const canChange = isOwner || session?.user?.role === 'admin';
+  // Someone else's sealed letter: an envelope. The admin may still delete it.
+  const sealed = memory.locked && memory.memory === undefined;
 
   return (
     <article className="mx-auto mt-6 w-full max-w-2xl">
       <Link href="/" className="link">Volver a los recuerdos</Link>
 
-      <div className="sticker mt-6">
-        <header className="flex items-center gap-3">
-          <AuthorLink person={memory.creator} className="shrink-0" tabIndex={-1} aria-hidden="true">
-            <Avatar image={memory.creator?.image} name={author} size={48} />
-          </AuthorLink>
-          <div>
-            <p className="font-display text-lg font-semibold leading-tight">
-              <AuthorLink person={memory.creator} className="hover:underline">{author}</AuthorLink>
-            </p>
-            <p className="text-ink-soft">{formatDate(memoryDate(memory))}</p>
-            {ageAt(birthDate, memoryDate(memory)) && (
-              <p className="text-ink-soft">{ageAt(birthDate, memoryDate(memory))}</p>
-            )}
-          </div>
-        </header>
-        {memory.photo && <InstantPhoto photo={memory.photo} className="mx-auto mt-6 max-w-md" />}
-        <p className="mt-6 whitespace-pre-line text-lg leading-relaxed">{memory.memory}</p>
-        {memory.voice && (
-          <div className="mt-6">
-            <VoiceNote voice={memory.voice} />
-          </div>
-        )}
-        <p className="mt-6">
-          <span className="tag-chip">{memory.tag}</span>
-        </p>
-      </div>
+      {sealed ? (
+        <div className="mt-6">
+          <SealedEnvelope memory={memory} />
+        </div>
+      ) : (
+        <div className="sticker mt-6">
+          <header className="flex items-center gap-3">
+            <AuthorLink person={memory.creator} className="shrink-0" tabIndex={-1} aria-hidden="true">
+              <Avatar image={memory.creator?.image} name={author} size={48} />
+            </AuthorLink>
+            <div>
+              <p className="font-display text-lg font-semibold leading-tight">
+                <AuthorLink person={memory.creator} className="hover:underline">{author}</AuthorLink>
+              </p>
+              <p className="text-ink-soft">{formatDate(memoryDate(memory))}</p>
+              {ageAt(birthDate, memoryDate(memory)) && (
+                <p className="text-ink-soft">{ageAt(birthDate, memoryDate(memory))}</p>
+              )}
+            </div>
+          </header>
+          <LetterNote memory={memory} className="mt-6" />
+          {memory.photo && <InstantPhoto photo={memory.photo} className="mx-auto mt-6 max-w-md" />}
+          <p className="mt-6 whitespace-pre-line text-lg leading-relaxed">{memory.memory}</p>
+          {memory.voice && (
+            <div className="mt-6">
+              <VoiceNote voice={memory.voice} />
+            </div>
+          )}
+          <p className="mt-6">
+            <span className="tag-chip">{memory.tag}</span>
+          </p>
+        </div>
+      )}
 
       {canChange && !confirming && (
         <div className="mt-8 flex flex-wrap gap-4">
-          <Link href={`/memories/${id}/edit`} className="btn btn-outline">Editar</Link>
+          {!sealed && <Link href={`/memories/${id}/edit`} className="btn btn-outline">Editar</Link>}
           <button type="button" className="btn btn-danger" onClick={() => setConfirming(true)}>
-            Borrar
+            {sealed ? 'Borrar carta' : 'Borrar'}
           </button>
         </div>
       )}
@@ -132,7 +143,7 @@ export default function SingleMemory() {
       {canChange && confirming && (
         <div role="alertdialog" aria-labelledby="confirm-title" className="mt-8 rounded-2xl border-2 border-danger bg-white p-5">
           <p id="confirm-title" className="font-display text-lg font-semibold">
-            ¿Borrar este recuerdo? No se puede deshacer.
+            {sealed ? '¿Borrar esta carta sin abrirla? No se puede deshacer y nadie podrá leerla.' : '¿Borrar este recuerdo? No se puede deshacer.'}
           </p>
           {deleteError && <p role="alert" className="mt-2 font-semibold text-danger">{deleteError}</p>}
           <div className="mt-4 flex flex-wrap gap-4">

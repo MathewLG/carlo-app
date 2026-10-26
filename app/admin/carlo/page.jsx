@@ -71,6 +71,63 @@ function BirthDate() {
   );
 }
 
+// "Recordatorio mensual": the admin's email on the 1st of each month.
+function MonthlyReminder() {
+  const [on, setOn] = useState(undefined); // undefined while loading
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error())))
+      .then((data) => setOn(data.monthlyReminder))
+      .catch(() => setError('No se pudo cargar. Recarga la página.'));
+  }, []);
+
+  // The box changes right away and goes back if saving fails.
+  const toggle = async (next) => {
+    setMessage('');
+    setError('');
+    setOn(next);
+    try {
+      const response = await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ monthlyReminder: next }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'No se pudo guardar.');
+      setOn(data.monthlyReminder);
+      setMessage(data.monthlyReminder ? 'Listo: te llegará el día 1 de cada mes.' : 'Listo: ya no te llegará.');
+    } catch (err) {
+      setOn(!next);
+      setError(err.message);
+    }
+  };
+
+  return (
+    <section className="sticker mt-8" aria-labelledby="reminder-title">
+      <h2 id="reminder-title" className="text-2xl font-bold">Recordatorio mensual</h2>
+      <p className="mt-2 text-ink-soft">
+        El día 1 de cada mes te llega un correo con lo que la familia escribió el mes anterior, la edad de Carlo y las
+        primeras veces que faltan. También te avisamos el día que se abre una carta con candado.
+      </p>
+      <label className="mt-4 flex items-center gap-3">
+        <input
+          type="checkbox"
+          className="h-5 w-5"
+          checked={Boolean(on)}
+          disabled={on === undefined}
+          onChange={(e) => toggle(e.target.checked)}
+        />
+        <span className="font-semibold">Enviarme el recordatorio mensual</span>
+      </label>
+      {message && <p role="status" className="mt-3 font-semibold">{message}</p>}
+      {error && <p role="alert" className="mt-3 font-semibold text-danger">{error}</p>}
+    </section>
+  );
+}
+
 export default function AdminCarlo() {
   const { data: session, status } = useSession();
 
@@ -84,6 +141,7 @@ export default function AdminCarlo() {
       <h1 className="text-4xl font-bold sm:text-5xl">Carlo</h1>
       <AdminNav />
       <BirthDate />
+      <MonthlyReminder />
     </div>
   );
 }

@@ -3,6 +3,8 @@ import { requireUser } from '@utils/access';
 import { parseMemoryInput } from '@utils/validate';
 import { timelineChanged } from '@utils/timelineBuild';
 import Memory from '@models/memory';
+import { getSettings } from '@models/settings';
+import { parseLock } from '@utils/letters';
 
 // The timeline rebuild runs after the response, inside this function.
 export const maxDuration = 60;
@@ -27,12 +29,16 @@ export const POST = async (req) => {
 
   try {
     await connectToDB();
+    const lock = parseLock(body.lock, body.lock?.age !== undefined ? (await getSettings()).carloBirthDate : null);
+    if (lock.error) return Response.json({ error: lock.error }, { status: 400 });
     const newMemory = await Memory.create({
       creator: user._id,
       memory: input.memory,
       tag: input.tag,
       happenedAt: input.happenedAt ?? undefined,
       milestone: input.milestone || undefined,
+      unlockAt: lock.unlockAt ?? undefined,
+      lockAge: lock.lockAge ?? undefined,
     });
     await timelineChanged();
     return Response.json(newMemory, { status: 201 });
