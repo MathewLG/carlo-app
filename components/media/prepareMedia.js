@@ -3,24 +3,64 @@ import { MAX_FILE_BYTES, MAX_VOICE_SECONDS } from '@utils/media';
 
 const MAX_PHOTO_EDGE = 2000;
 
+const isHeic = (file) => /hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name ?? '');
+
+const openAsBitmap = async (file, options) => {
+  const bitmap = await (options ? createImageBitmap(file, options) : createImageBitmap(file));
+  return { source: bitmap, width: bitmap.width, height: bitmap.height, close: () => bitmap.close?.() };
+};
+
+const openAsImage = async (file) => {
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.src = url;
+  try {
+    await img.decode();
+  } catch (error) {
+    URL.revokeObjectURL(url);
+    throw error;
+  }
+  return { source: img, width: img.naturalWidth, height: img.naturalHeight, close: () => URL.revokeObjectURL(url) };
+};
+
+// Opens a picked photo for drawing, the right way up. createImageBitmap's
+// 'from-image' option turns it by the photo's own rotation, but older
+// browsers (iPhones before iOS 17, older Chrome) reject the option and some
+// have no createImageBitmap; an <img> also turns it in every current browser.
+// Returns { source, width, height, close } or throws when nothing can open it.
+export const openPhoto = async (file) => {
+  const ways = [
+    ...(typeof createImageBitmap === 'function' ? [() => openAsBitmap(file, { imageOrientation: 'from-image' })] : []),
+    () => openAsImage(file),
+    ...(typeof createImageBitmap === 'function' ? [() => openAsBitmap(file)] : []),
+  ];
+  for (const open of ways) {
+    try {
+      return await open();
+    } catch {
+      // Try the next way.
+    }
+  }
+  throw new Error(
+    isHeic(file)
+      ? 'Esta foto está en formato HEIC y este navegador no puede abrirla. Súbela desde el iPhone, o guárdala como JPG.'
+      : 'No se pudo abrir esa foto. Prueba con una foto JPG o PNG.',
+  );
+};
+
 // Shrinks a photo on the phone before it is sent: at most 2,000 px on the long
 // edge, saved as JPEG. Redrawing it on a canvas also drops the location and
 // camera data stored inside the original file.
 export const shrinkPhoto = async (file) => {
-  let bitmap;
-  try {
-    bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
-  } catch {
-    throw new Error('No se pudo abrir esa foto. Prueba con una foto JPG o PNG.');
-  }
-  const scale = Math.min(1, MAX_PHOTO_EDGE / Math.max(bitmap.width, bitmap.height));
-  const width = Math.round(bitmap.width * scale);
-  const height = Math.round(bitmap.height * scale);
+  const photo = await openPhoto(file);
+  const scale = Math.min(1, MAX_PHOTO_EDGE / Math.max(photo.width, photo.height));
+  const width = Math.round(photo.width * scale);
+  const height = Math.round(photo.height * scale);
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
-  canvas.getContext('2d').drawImage(bitmap, 0, 0, width, height);
-  bitmap.close?.();
+  canvas.getContext('2d').drawImage(photo.source, 0, 0, width, height);
+  photo.close();
 
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85));
   if (!blob) throw new Error('No se pudo preparar la foto. Inténtalo de nuevo.');
