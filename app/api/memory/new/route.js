@@ -12,7 +12,7 @@ export const maxDuration = 60;
 export const POST = async (req) => {
   // The creator always comes from the session, never from the request body,
   // so nobody can post a memory under someone else's name.
-  const { response, user } = await requireUser();
+  const { response, user } = await requireUser({ write: true });
   if (response) return response;
 
   let body;

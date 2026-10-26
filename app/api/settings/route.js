@@ -3,15 +3,19 @@ import { requireUser } from '@utils/access';
 import { toDayString } from '@utils/dates';
 import { parsePastDay } from '@utils/validate';
 import { getSettings } from '@models/settings';
+import { carloAccessOpen, DEFAULT_WELCOME } from '@utils/carlo';
 
 export const dynamic = 'force-dynamic';
 
 const reply = (status, body) => Response.json(body, { status });
 
-// Only what the family needs; the join code never leaves the server. The
-// admin also sees whether the monthly email is on.
+// Only what the family needs; the join code and Carlo's email never leave
+// the server. The admin also sees whether the monthly email is on.
 const publicSettings = (settings, user) => ({
   carloBirthDate: settings.carloBirthDate ? toDayString(settings.carloBirthDate) : null,
+  // Whether Carlo can already read his memories, for the home page banner.
+  carloCanRead: carloAccessOpen(settings),
+  welcomeText: settings.welcomeText || DEFAULT_WELCOME,
   ...(user.role === 'admin' && { monthlyReminder: settings.monthlyReminder !== false }),
 });
 

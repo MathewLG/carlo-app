@@ -23,12 +23,17 @@ const UserSchema = new Schema({
     trim: true,
     maxlength: 40,
   },
-  // Only scripts/make-admin.mjs sets 'admin'; no screen can grant it.
+  // Only scripts/make-admin.mjs sets 'admin'; no screen can grant it. 'carlo'
+  // follows settings.carloEmail (utils/membership.js).
   role: {
     type: String,
     enum: ['familiar', 'admin', 'carlo'],
     default: 'familiar',
   },
+  // Carlo's account: when he first saw the welcome, and the timeline moment
+  // he was reading last, so his next visit picks up there.
+  welcomedAt: Date,
+  lastSeenEventId: String,
   // Wrong family codes from this account in the current window.
   joinAttempts: {
     count: { type: Number, default: 0 },

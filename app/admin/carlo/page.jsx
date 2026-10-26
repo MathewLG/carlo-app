@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import AdminNav from '@components/AdminNav';
+import CarloAccess from '@components/admin/CarloAccess';
 import { forgetCarloBirthDate } from '@components/useCarloBirthDate';
 import { parseDay, todayString } from '@utils/dates';
 import { formatDate } from '@utils/format';
@@ -141,6 +142,7 @@ export default function AdminCarlo() {
       <h1 className="text-4xl font-bold sm:text-5xl">Carlo</h1>
       <AdminNav />
       <BirthDate />
+      <CarloAccess />
       <MonthlyReminder />
     </div>
   );

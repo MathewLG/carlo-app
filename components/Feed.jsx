@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSession, signIn } from 'next-auth/react';
 import MemoryCard from './MemoryCard';
+import WriteLink from './WriteLink';
 import useCarloBirthDate from './useCarloBirthDate';
 
 const SEARCH_DELAY_MS = 300;
@@ -148,9 +149,7 @@ const Feed = ({ mine = false, author = null }) => {
           <p className="status-text">
             {mine ? 'Todavía no has escrito ningún recuerdo.' : 'Todavía no hay recuerdos. Escribe el primero.'}
           </p>
-          <Link href="/create-memory" className="btn btn-sun">
-            Escribir un recuerdo
-          </Link>
+          <WriteLink />
         </Status>
       )}
 

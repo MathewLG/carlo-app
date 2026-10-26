@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import Avatar from './Avatar';
+import WriteLink from './WriteLink';
 
 const Nav = () => {
   const { data: session, status } = useSession();
@@ -15,14 +16,18 @@ const Nav = () => {
   const menuRef = useRef(null);
   const user = session?.user;
   const isAdmin = user?.role === 'admin';
+  const isCarlo = user?.role === 'carlo';
+  // Carlo's account reads: no "Mis recuerdos" and no writing.
   const links = [
     { href: '/linea-del-tiempo', label: 'Línea del tiempo' },
+    ...(isCarlo ? [{ href: '/', label: 'Recuerdos' }] : []),
     { href: '/familia', label: 'Familia' },
     { href: '/diccionario', label: 'Diccionario' },
-    { href: '/profile', label: 'Mis recuerdos' },
+    ...(isCarlo ? [] : [{ href: '/profile', label: 'Mis recuerdos' }]),
     ...(isAdmin ? [{ href: '/admin/familia', label: 'Admin', section: '/admin' }] : []),
   ];
-  const current = (link) => (pathname === link.href || pathname.startsWith(`${link.section ?? link.href}/`) ? 'page' : undefined);
+  const current = (link) =>
+    pathname === link.href || (link.href !== '/' && pathname.startsWith(`${link.section ?? link.href}/`)) ? 'page' : undefined;
 
   // Close the mobile menu on Escape or a tap outside it.
   useEffect(() => {
@@ -58,9 +63,7 @@ const Nav = () => {
                 {link.label}
               </Link>
             ))}
-            <Link href="/create-memory" className="btn btn-sun">
-              Escribir un recuerdo
-            </Link>
+            <WriteLink />
             <button type="button" onClick={() => signOut()} className="btn btn-outline">
               Cerrar sesión
             </button>
@@ -90,9 +93,7 @@ const Nav = () => {
                 id="mobile-menu"
                 className="sticker absolute right-0 top-full z-20 mt-3 flex w-64 flex-col gap-3"
               >
-                <Link href="/create-memory" className="btn btn-sun">
-                  Escribir un recuerdo
-                </Link>
+                <WriteLink />
                 {links.map((link) => (
                   <Link key={link.href} href={link.href} className="btn btn-outline" aria-current={current(link)}>
                     {link.label}

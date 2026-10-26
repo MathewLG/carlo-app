@@ -1,4 +1,5 @@
 import Feed from '@components/Feed';
+import CarloBanner from '@components/CarloBanner';
 
 const Home = () => (
   <section className="mt-6">
@@ -9,10 +10,10 @@ const Home = () => (
       </span>
     </h1>
     <p className="mt-6 max-w-2xl text-lg text-ink-soft sm:text-xl">
-      Carlo-App es una aplicación en la que puedes almacenar los momentos importantes con tu bebé de manera
-      segura. Tú y sus seres queridos pueden enviarle mensajes mientras crece y darle acceso para leerlos cuando
-      creas que es el momento adecuado.
+      Carlo-App guarda de manera segura los momentos importantes de la vida de Carlo. Su familia le escribe
+      mientras crece, y él podrá entrar a leerlo todo cuando cumpla la edad que la familia eligió.
     </p>
+    <CarloBanner />
     <Feed />
   </section>
 );

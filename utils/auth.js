@@ -1,6 +1,6 @@
 import GoogleProvider from 'next-auth/providers/google';
 import User from '@models/user';
-import Invite from '@models/invite';
+import { membership } from '@utils/membership';
 import { connectToDB } from '@utils/database';
 
 // Builds a username from the Google display name. Accents are stripped
@@ -32,10 +32,13 @@ export const authOptions = {
         session.user.id = sessionUser._id.toString();
         session.user.username = sessionUser.username;
         session.user.displayName = sessionUser.displayName ?? '';
+        // The pages use these to send people who are not on the list to /unirse,
+        // and to show Carlo his welcome; the API checks again on every request.
+        const { allowed, carloWaiting } = await membership(sessionUser);
         session.user.role = sessionUser.role;
-        // The pages use this to send people who are not on the list to /unirse;
-        // the API checks the list again on every request.
-        session.user.allowed = Boolean(await Invite.exists({ email: sessionUser.email.toLowerCase() }));
+        session.user.allowed = allowed;
+        session.user.carloWaiting = carloWaiting;
+        session.user.welcomed = Boolean(sessionUser.welcomedAt);
       }
       return session;
     },

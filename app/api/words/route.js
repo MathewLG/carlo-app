@@ -20,7 +20,7 @@ export const GET = async () => {
 
 export const POST = async (request) => {
   // The author always comes from the session, never from the request.
-  const { response, user } = await requireUser();
+  const { response, user } = await requireUser({ write: true });
   if (response) return response;
 
   let body;

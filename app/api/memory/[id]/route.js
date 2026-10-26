@@ -17,8 +17,8 @@ export const dynamic = 'force-dynamic';
 const notFound = () => Response.json({ error: 'Este recuerdo no existe' }, { status: 404 });
 
 // Shared guard: on the allow list, valid id, memory exists. Returns { user, memory } or { response }.
-const loadMemory = async (id) => {
-  const { response, user } = await requireUser();
+const loadMemory = async (id, { write = false } = {}) => {
+  const { response, user } = await requireUser({ write });
   if (response) return { response };
   if (!isValidObjectId(id)) return { response: notFound() };
 
@@ -41,7 +41,7 @@ export const GET = async (_request, { params }) => {
 
 export const PATCH = async (request, { params }) => {
   try {
-    const { response, user, memory } = await loadMemory((await params).id);
+    const { response, user, memory } = await loadMemory((await params).id, { write: true });
     if (response) return response;
     if (!canChange(user, memory)) {
       const error = isLocked(memory) ? 'Esta carta tiene candado: solo quien la escribió puede abrirla antes de su fecha' : 'Solo quien escribió este recuerdo puede editarlo';
@@ -80,7 +80,7 @@ export const PATCH = async (request, { params }) => {
 
 export const DELETE = async (_request, { params }) => {
   try {
-    const { response, user, memory } = await loadMemory((await params).id);
+    const { response, user, memory } = await loadMemory((await params).id, { write: true });
     if (response) return response;
     if (!canEdit(user, memory)) {
       return Response.json({ error: 'Solo quien escribió este recuerdo puede borrarlo' }, { status: 403 });

@@ -17,6 +17,7 @@ import { GET as getPerson } from '@/app/api/family/[id]/route';
 import { PATCH as changeName } from '@/app/api/profile/route';
 import { GET as listWords, POST as addWord } from '@/app/api/words/route';
 import { DELETE as deleteWord, PATCH as editWord } from '@/app/api/words/[id]/route';
+import { PATCH as setCarlo } from '@/app/api/admin/carlo/route';
 import Event from '@models/event';
 import Word from '@models/word';
 import { saveFile } from '@utils/services/storage';
@@ -30,6 +31,7 @@ import { clearDatabase, request, routeParams, signInAs, signOut, startDatabase, 
 vi.mock('next-auth', async (importOriginal) => ({ ...(await importOriginal()), getServerSession: vi.fn() }));
 
 const FAMILY_CODE = 'tres palabras azules';
+const CARLO_EMAIL = 'carlo@example.com';
 
 // How each action in the permission table is performed. `ctx` holds the
 // memory, sealed letter and dictionary word being acted on, and another
@@ -77,6 +79,7 @@ const ACTIONS = {
     deleteMemory(request(`/api/memory/${letter._id}`, { method: 'DELETE' }), routeParams({ id: String(letter._id) })),
   "see a sealed letter's photo": ({ letter }) =>
     getMedia(request(`/api/media/${letter._id}/photo`), routeParams({ id: String(letter._id), kind: 'photo' })),
+  "set up Carlo's access": () => setCarlo(request('/api/admin/carlo', { method: 'PATCH', body: { carloAccessAge: 16 } })),
   'delete a word': ({ word }) => deleteWord(request(`/api/words/${word._id}`, { method: 'DELETE' }), routeParams({ id: String(word._id) })),
 };
 
@@ -90,7 +93,8 @@ afterAll(() => stopDatabase());
 beforeEach(async () => {
   await clearDatabase();
   const { salt, hash } = hashCode(FAMILY_CODE);
-  await Settings.create({ key: 'app', joinCodeSalt: salt, joinCodeHash: hash, joinOpen: true });
+  // Carlo's account exists and his access is open.
+  await Settings.create({ key: 'app', joinCodeSalt: salt, joinCodeHash: hash, joinOpen: true, carloEmail: CARLO_EMAIL, carloAccess: 'open' });
 });
 
 describe.each(PERMISSIONS)('$action', (row) => {
@@ -114,6 +118,7 @@ describe.each(PERMISSIONS)('$action', (row) => {
     if (role === 'autor') signInAs(author);
     if (role === 'familiar') signInAs(await makeUser());
     if (role === 'admin') signInAs(await makeAdmin());
+    if (role === 'carlo') signInAs(await makeUser({ email: CARLO_EMAIL, invited: false }));
 
     const response = await ACTIONS[row.action]({ id: memory._id.toString(), other, event, word, letter });
 

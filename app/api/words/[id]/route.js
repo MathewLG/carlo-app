@@ -14,7 +14,7 @@ const reply = (status, body) => Response.json(body, { status });
 // Shared guard: on the allow list, the entry exists, and the person wrote it
 // or is the admin. Returns { word } or { response }.
 const loadOwnWord = async (id) => {
-  const { response, user } = await requireUser();
+  const { response, user } = await requireUser({ write: true });
   if (response) return { response };
   if (!isValidObjectId(id)) return { response: reply(404, { error: 'Esta palabra no existe' }) };
   await connectToDB();

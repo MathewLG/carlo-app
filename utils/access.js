@@ -2,8 +2,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@utils/auth';
 import { connectToDB } from '@utils/database';
 import User from '@models/user';
-import Invite from '@models/invite';
 import { isLocked } from '@utils/letters';
+import { membership } from '@utils/membership';
 
 const deny = (status, error) => ({ response: Response.json({ error }, { status }) });
 
@@ -11,8 +11,9 @@ const deny = (status, error) => ({ response: Response.json({ error }, { status }
 // request, so removing someone takes effect on their next page load.
 //   roles         only these roles get through (default: any allowed user)
 //   allowPending  let signed-in users who are not on the list through too
+//   write         the request changes something: Carlo's account only reads
 // Returns { user, allowed } or { response } with a 401/403 to send back.
-export const requireUser = async ({ roles, allowPending = false } = {}) => {
+export const requireUser = async ({ roles, allowPending = false, write = false } = {}) => {
   const session = await getServerSession(authOptions);
   const email = session?.user?.email;
   if (!email) return deny(401, 'Inicia sesión primero');
@@ -21,10 +22,12 @@ export const requireUser = async ({ roles, allowPending = false } = {}) => {
   const user = await User.findOne({ email });
   if (!user) return deny(401, 'Inicia sesión primero');
 
-  const allowed = Boolean(await Invite.exists({ email: email.toLowerCase() }));
+  const { allowed, carloWaiting } = await membership(user);
+  if (carloWaiting && !allowPending) return deny(403, 'Todavía no es tiempo, Carlo. Tus recuerdos te esperan.');
   if (!allowed && !allowPending) {
     return deny(403, 'Todavía no eres parte de la familia en Carlo App. Pide el código familiar a Mathew.');
   }
+  if (write && user.role === 'carlo') return deny(403, 'Puedes leer todo, Carlo, pero no cambiar nada.');
   if (roles && !roles.includes(user.role)) return deny(403, 'No tienes permiso para hacer esto');
 
   return { user, allowed };
