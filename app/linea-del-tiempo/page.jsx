@@ -216,7 +216,7 @@ export default function Timeline() {
           <button type="button" className="btn btn-outline" onClick={reorganize} disabled={reorganizing}>
             {reorganizing ? 'Reorganizando…' : 'Reorganizar'}
           </button>
-          <span className="text-sm text-ink-soft">Agrupa y nombra otra vez los momentos que no has editado.</span>
+          <span className="text-sm text-ink-soft">Acomoda por mes los recuerdos que aún no tienen momento. Los momentos con nombre se quedan.</span>
         </div>
       )}
 

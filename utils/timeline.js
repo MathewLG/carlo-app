@@ -10,7 +10,7 @@ const MONTHS = [
 export const MAX_TITLE_LENGTH = 60;
 const PREVIEW_LENGTH = 300;
 
-// What the namer sees of each memory: no author, no files, only the start
+// What a session sees of each memory: no author, no files, only the start
 // of the text, the day and Carlo's age.
 export const timelineItems = (memories, birthDate) =>
   memories.map((m) => {
@@ -25,7 +25,7 @@ export const timelineItems = (memories, birthDate) =>
     };
   });
 
-// Used when Claude is not available: one event per calendar month.
+// Memories not in a named moment yet: one event per calendar month.
 export const groupByMonth = (items) => {
   const months = new Map();
   for (const item of [...items].sort((a, b) => a.day.localeCompare(b.day))) {
@@ -39,22 +39,43 @@ export const groupByMonth = (items) => {
   return [...months.values()];
 };
 
-// Claude's answer is only used if it accounts for every memory exactly once,
-// with short non-empty titles. Anything else falls back to months.
-export const isValidGrouping = (groups, items) => {
-  if (!Array.isArray(groups) || groups.length === 0) return false;
-  const expected = new Set(items.map((i) => i.id));
+// Checks the groups named in a Claude Code session before they are saved:
+// short non-empty titles, ids of memories that exist, each id at most once.
+// Groups may cover only some memories; the rest stay grouped by month.
+// Returns an error message, or null when they are fine.
+export const checkGroups = (groups, memoryIds) => {
+  if (!Array.isArray(groups) || groups.length === 0) return 'There are no groups.';
+  const known = new Set(memoryIds.map(String));
   const seen = new Set();
   for (const group of groups) {
     const title = typeof group?.title === 'string' ? group.title.trim() : '';
-    if (!title || title.length > MAX_TITLE_LENGTH) return false;
-    if (!Array.isArray(group.memoryIds) || group.memoryIds.length === 0) return false;
-    for (const id of group.memoryIds) {
-      if (!expected.has(id) || seen.has(id)) return false;
+    if (!title) return 'A group has no title.';
+    if (title.length > MAX_TITLE_LENGTH) return `"${title}" is over ${MAX_TITLE_LENGTH} characters.`;
+    if (!Array.isArray(group.memoryIds) || group.memoryIds.length === 0) return `"${title}" has no memories.`;
+    for (const id of group.memoryIds.map(String)) {
+      if (!known.has(id)) return `"${title}" names a memory that does not exist: ${id}.`;
+      if (seen.has(id)) return `Memory ${id} is in two groups.`;
       seen.add(id);
     }
   }
-  return seen.size === expected.size;
+  return null;
+};
+
+// The events to keep when a session's groups are saved: events the admin
+// edited stay as they are, earlier session events lose the memories that
+// were regrouped, and each group becomes a new event named in the session.
+// Returns { keptEvents } or { error } when a group takes a memory out of an
+// event the admin edited.
+export const withSessionGroups = (events, groups) => {
+  const regrouped = new Set(groups.flatMap((g) => g.memoryIds.map(String)));
+  const locked = events.filter((e) => e.locked);
+  const taken = locked.find((e) => e.memoryIds.some((id) => regrouped.has(String(id))));
+  if (taken) return { error: `"${taken.title}" was edited by the admin; leave its memories out.` };
+  const named = events
+    .filter((e) => !e.locked && e.source === 'claude')
+    .map((e) => ({ ...e, memoryIds: e.memoryIds.map(String).filter((id) => !regrouped.has(id)) }));
+  const added = groups.map((g) => ({ title: g.title.trim(), memoryIds: g.memoryIds.map(String), source: 'claude', locked: false }));
+  return { keptEvents: [...locked, ...named, ...added] };
 };
 
 const span = (memoryIds, dayById) => {
@@ -62,22 +83,24 @@ const span = (memoryIds, dayById) => {
   return { startDay: days[0], endDay: days.at(-1) };
 };
 
-// The whole timeline, in order. Events the admin touched stay exactly as
-// they are (minus memories that no longer exist); every milestone memory not
-// in one becomes its own event; the rest are grouped by `group(items)`, which
-// returns Claude's groups or null to fall back to months.
+// The whole timeline, in order. Kept events (the admin's edits and moments
+// named in a session) stay as they are, minus memories that no longer
+// exist; every milestone memory not in one becomes its own event; the rest
+// are grouped by month until the next session names them.
 // Returns [{ title, memoryIds, startDay, endDay, source, locked }].
-export const planTimeline = async ({ memories, lockedEvents = [], birthDate = null, group = async () => null }) => {
+export const planTimeline = ({ memories, keptEvents = [], birthDate = null }) => {
   const items = timelineItems(memories, birthDate);
   const dayById = new Map(items.map((i) => [i.id, i.day]));
   const events = [];
   const placed = new Set();
 
-  for (const locked of lockedEvents) {
-    const memoryIds = locked.memoryIds.map(String).filter((id) => dayById.has(id) && !placed.has(id));
+  // The admin's edits go first, so they win for a memory in two events.
+  const lockedFirst = [...keptEvents].sort((a, b) => Number(Boolean(b.locked)) - Number(Boolean(a.locked)));
+  for (const kept of lockedFirst) {
+    const memoryIds = kept.memoryIds.map(String).filter((id) => dayById.has(id) && !placed.has(id));
     if (!memoryIds.length) continue;
     memoryIds.forEach((id) => placed.add(id));
-    events.push({ title: locked.title, memoryIds, ...span(memoryIds, dayById), source: locked.source, locked: true });
+    events.push({ title: kept.title, memoryIds, ...span(memoryIds, dayById), source: kept.source, locked: Boolean(kept.locked) });
   }
 
   for (const item of items) {
@@ -86,24 +109,8 @@ export const planTimeline = async ({ memories, lockedEvents = [], birthDate = nu
     events.push({ title: milestoneTitle(item.milestone), memoryIds: [item.id], ...span([item.id], dayById), source: 'hito', locked: false });
   }
 
-  const rest = items.filter((i) => !placed.has(i.id));
-  if (rest.length) {
-    let groups = null;
-    try {
-      groups = await group(rest);
-    } catch {
-      groups = null;
-    }
-    const valid = isValidGrouping(groups, rest);
-    for (const g of valid ? groups : groupByMonth(rest)) {
-      events.push({
-        title: g.title.trim(),
-        memoryIds: g.memoryIds,
-        ...span(g.memoryIds, dayById),
-        source: valid ? 'claude' : 'mes',
-        locked: false,
-      });
-    }
+  for (const g of groupByMonth(items.filter((i) => !placed.has(i.id)))) {
+    events.push({ title: g.title, memoryIds: g.memoryIds, ...span(g.memoryIds, dayById), source: 'mes', locked: false });
   }
 
   return events.sort((a, b) => a.startDay.localeCompare(b.startDay) || a.endDay.localeCompare(b.endDay));

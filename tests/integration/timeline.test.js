@@ -37,15 +37,18 @@ const seed = async () => {
   const xmas = await makeMemory(rosa, { memory: 'Navidad', happenedAt: day('2024-12-24') });
   return { rosa, party, gifts, xmas };
 };
-const claudeGroups = ({ party, gifts, xmas }) => async () => [
-  { title: 'Tu primer cumpleaños', memoryIds: [String(party._id), String(gifts._id)] },
-  { title: 'Navidad 2024', memoryIds: [String(xmas._id)] },
-];
+// Moments as a Claude Code session saves them (scripts/timeline.mjs).
+const nameInSession = ({ party, gifts, xmas }) =>
+  Event.insertMany([
+    { title: 'Tu primer cumpleaños', memoryIds: [party._id, gifts._id], startDay: '2024-05-15', endDay: '2024-05-16', source: 'claude' },
+    { title: 'Navidad 2024', memoryIds: [xmas._id], startDay: '2024-12-24', endDay: '2024-12-24', source: 'claude' },
+  ]);
 
 describe('rebuilding', () => {
-  it("stores Claude's events in order, and the family reads them with their memories", async () => {
+  it('keeps the moments named in a session, and the family reads them with their memories', async () => {
     const m = await seed();
-    expect(await rebuildTimeline({ group: claudeGroups(m) })).toBe(true);
+    await nameInSession(m);
+    expect(await rebuildTimeline()).toBe(true);
 
     signInAs(m.rosa);
     const json = await timeline();
@@ -58,7 +61,7 @@ describe('rebuilding', () => {
     expect(json.events[0].memories[0].creator.username).toBe('abuelarosa');
   });
 
-  it('groups by month when Claude is not available (no API key in tests)', async () => {
+  it('groups by month before any session has named a moment', async () => {
     await seed();
     await rebuildTimeline();
     expect((await Event.find().sort({ startDay: 1 })).map((e) => e.title)).toEqual(['Mayo de 2024', 'Diciembre de 2024']);
@@ -85,12 +88,25 @@ describe('rebuilding', () => {
 
   it('leaves the timeline marked out of date if the rebuild fails', async () => {
     await seed();
-    const broken = async () => [{ title: 'X', memoryIds: ['65d1a500aaaaaaaaaaaaaaaa'] }];
     vi.spyOn(Event, 'insertMany').mockRejectedValueOnce(new Error('db down'));
-    await expect(rebuildTimeline({ group: broken })).rejects.toThrow('db down');
+    await expect(rebuildTimeline()).rejects.toThrow('db down');
     const settings = await Settings.findOne();
     expect(settings.timelineDirty).toBe(true);
     expect(settings.timelineBuildingUntil).toBeNull();
+  });
+
+  it('puts a new memory in its month until a session names it, and drops a deleted one from its moment', async () => {
+    const m = await seed();
+    await nameInSession(m);
+    await m.gifts.deleteOne();
+    await makeMemory(m.rosa, { memory: 'Año nuevo', happenedAt: day('2024-12-31') });
+    await rebuildTimeline({ force: true });
+    const events = (await Event.find().sort({ startDay: 1 })).map((e) => [e.title, e.memoryIds.length, e.source]);
+    expect(events).toEqual([
+      ['Tu primer cumpleaños', 1, 'claude'],
+      ['Navidad 2024', 1, 'claude'],
+      ['Diciembre de 2024', 1, 'mes'],
+    ]);
   });
 
   it('makes each milestone memory its own event', async () => {
@@ -138,7 +154,8 @@ describe('memory changes mark the timeline out of date', () => {
 describe("the admin's edits", () => {
   const setup = async () => {
     const m = await seed();
-    await rebuildTimeline({ group: claudeGroups(m) });
+    await nameInSession(m);
+    await rebuildTimeline({ force: true });
     const [birthday, christmas] = await Event.find().sort({ startDay: 1 });
     signInAs(await makeAdmin());
     return { ...m, birthday, christmas };
@@ -148,10 +165,10 @@ describe("the admin's edits", () => {
     const { birthday } = await setup();
     expect((await patchEvent(birthday._id, { title: ' La gran fiesta ' })).status).toBe(200);
 
-    await rebuildTimeline({ force: true, group: async (items) => [{ title: 'Otro', memoryIds: items.map((i) => i.id) }] });
+    await rebuildTimeline({ force: true });
 
     const titles = (await Event.find().sort({ startDay: 1 })).map((e) => [e.title, e.locked]);
-    expect(titles).toEqual([['La gran fiesta', true], ['Otro', false]]);
+    expect(titles).toEqual([['La gran fiesta', true], ['Navidad 2024', false]]);
   });
 
   it('merging takes in the other event and spans both', async () => {

@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
-import { ageMarkers, groupByMonth, isValidGrouping, planTimeline, timelineItems } from '@utils/timeline';
+import { describe, expect, it } from 'vitest';
+import { ageMarkers, checkGroups, groupByMonth, planTimeline, timelineItems, withSessionGroups } from '@utils/timeline';
 import { milestoneTitle, parseMilestone } from '@utils/milestones';
 
 const day = (d) => new Date(`${d}T12:00:00Z`);
@@ -20,75 +20,91 @@ describe('timelineItems', () => {
 });
 
 describe('planTimeline', () => {
-  it("uses Claude's groups and names when they account for every memory", async () => {
-    const group = vi.fn(async () => [
-      { title: ' Tu primer cumpleaños ', memoryIds: ['a', 'b'] },
-      { title: 'Navidad 2024', memoryIds: ['d'] },
-    ]);
-
-    const events = await planTimeline({ memories, group });
+  it('keeps named moments, makes each first time its own event, and groups the rest by month', () => {
+    const events = planTimeline({
+      memories,
+      keptEvents: [{ title: 'Tu primer cumpleaños', memoryIds: ['a', 'b'], source: 'claude' }],
+    });
 
     expect(events).toEqual([
       { title: 'Tu primer cumpleaños', memoryIds: ['a', 'b'], startDay: '2024-05-15', endDay: '2024-05-16', source: 'claude', locked: false },
       { title: 'Tus primeros pasos', memoryIds: ['c'], startDay: '2024-07-02', endDay: '2024-07-02', source: 'hito', locked: false },
-      { title: 'Navidad 2024', memoryIds: ['d'], startDay: '2024-12-24', endDay: '2024-12-24', source: 'claude', locked: false },
+      { title: 'Diciembre de 2024', memoryIds: ['d'], startDay: '2024-12-24', endDay: '2024-12-24', source: 'mes', locked: false },
     ]);
-    // A milestone memory is its own event, so Claude never sees it.
-    expect(group.mock.calls[0][0].map((i) => i.id)).toEqual(['a', 'b', 'd']);
   });
 
-  it.each([
-    ['nothing', null],
-    ['a memory left out', [{ title: 'X', memoryIds: ['a', 'b'] }]],
-    ['a memory twice', [{ title: 'X', memoryIds: ['a', 'b', 'd'] }, { title: 'Y', memoryIds: ['d'] }]],
-    ['an unknown id', [{ title: 'X', memoryIds: ['a', 'b', 'd', 'zzz'] }]],
-    ['an empty title', [{ title: '  ', memoryIds: ['a', 'b', 'd'] }]],
-  ])('falls back to months when Claude returns %s', async (_label, answer) => {
-    const events = await planTimeline({ memories, group: async () => answer });
-    expect(events.filter((e) => e.source !== 'hito').map((e) => [e.title, e.source])).toEqual([
+  it('groups everything by month before any session has named a moment', () => {
+    expect(planTimeline({ memories }).map((e) => [e.title, e.source])).toEqual([
       ['Mayo de 2024', 'mes'],
+      ['Tus primeros pasos', 'hito'],
       ['Diciembre de 2024', 'mes'],
     ]);
   });
 
-  it('falls back to months when Claude throws', async () => {
-    const events = await planTimeline({ memories, group: async () => { throw new Error('down'); } });
-    expect(events.map((e) => e.source)).toEqual(['mes', 'hito', 'mes']);
-  });
-
-  it('keeps events the admin edited exactly, and never sends their memories to Claude', async () => {
-    const group = vi.fn(async (items) => [{ title: 'Navidad', memoryIds: items.map((i) => i.id) }]);
-    const events = await planTimeline({
+  it('keeps events the admin edited exactly, minus deleted memories, and they win over a session name', () => {
+    const events = planTimeline({
       memories,
-      lockedEvents: [{ title: 'La gran fiesta', memoryIds: ['a', 'b', 'gone'], source: 'claude' }],
-      group,
+      keptEvents: [
+        { title: 'Fiesta', memoryIds: ['a'], source: 'claude' },
+        { title: 'La gran fiesta', memoryIds: ['a', 'b', 'gone'], source: 'claude', locked: true },
+      ],
     });
     expect(events[0]).toEqual({
       title: 'La gran fiesta', memoryIds: ['a', 'b'], startDay: '2024-05-15', endDay: '2024-05-16', source: 'claude', locked: true,
     });
-    expect(group.mock.calls[0][0].map((i) => i.id)).toEqual(['d']);
+    expect(events.map((e) => e.title)).not.toContain('Fiesta');
   });
 
-  it('drops an edited event whose memories were all deleted', async () => {
-    const events = await planTimeline({ memories: [memory('d', '2024-12-24')], lockedEvents: [{ title: 'Vacío', memoryIds: ['gone'], source: 'claude' }] });
+  it('drops a kept event whose memories were all deleted', () => {
+    const events = planTimeline({ memories: [memory('d', '2024-12-24')], keptEvents: [{ title: 'Vacío', memoryIds: ['gone'], source: 'claude' }] });
     expect(events.map((e) => e.title)).toEqual(['Diciembre de 2024']);
   });
 
-  it('returns nothing for no memories, without asking Claude', async () => {
-    const group = vi.fn();
-    expect(await planTimeline({ memories: [], group })).toEqual([]);
-    expect(group).not.toHaveBeenCalled();
+  it('returns nothing for no memories', () => {
+    expect(planTimeline({ memories: [] })).toEqual([]);
   });
 });
 
-describe('isValidGrouping and groupByMonth', () => {
-  const items = timelineItems(memories.slice(0, 2), null);
-  it('rejects titles over 60 characters and empty groups', () => {
-    expect(isValidGrouping([{ title: 'x'.repeat(61), memoryIds: ['a', 'b'] }], items)).toBe(false);
-    expect(isValidGrouping([{ title: 'X', memoryIds: [] }, { title: 'Y', memoryIds: ['a', 'b'] }], items)).toBe(false);
-    expect(isValidGrouping([], items)).toBe(false);
+describe('checkGroups', () => {
+  const ids = ['a', 'b', 'd'];
+  it('accepts groups that cover only some memories', () => {
+    expect(checkGroups([{ title: ' Tu fiesta ', memoryIds: ['a', 'b'] }], ids)).toBeNull();
   });
 
+  it.each([
+    ['no groups', [], 'There are no groups.'],
+    ['not a list', { title: 'X' }, 'There are no groups.'],
+    ['an empty title', [{ title: '  ', memoryIds: ['a'] }], 'A group has no title.'],
+    ['a title over 60 characters', [{ title: 'x'.repeat(61), memoryIds: ['a'] }], 'is over 60 characters'],
+    ['an empty group', [{ title: 'X', memoryIds: [] }], '"X" has no memories.'],
+    ['an unknown id', [{ title: 'X', memoryIds: ['zzz'] }], 'does not exist: zzz'],
+    ['a memory twice', [{ title: 'X', memoryIds: ['a'] }, { title: 'Y', memoryIds: ['a'] }], 'Memory a is in two groups.'],
+  ])('refuses %s', (_label, groups, message) => {
+    expect(checkGroups(groups, ids)).toContain(message);
+  });
+});
+
+describe('withSessionGroups', () => {
+  const events = [
+    { title: 'La gran fiesta', memoryIds: ['a'], source: 'claude', locked: true },
+    { title: 'Navidad', memoryIds: ['d', 'e'], source: 'claude', locked: false },
+  ];
+
+  it('takes regrouped memories out of earlier session moments and adds the new ones', () => {
+    const { keptEvents } = withSessionGroups(events, [{ title: ' Tu Navidad ', memoryIds: ['d', 'f'] }]);
+    expect(keptEvents).toEqual([
+      events[0],
+      { title: 'Navidad', memoryIds: ['e'], source: 'claude', locked: false },
+      { title: 'Tu Navidad', memoryIds: ['d', 'f'], source: 'claude', locked: false },
+    ]);
+  });
+
+  it("refuses a group that takes a memory from the admin's edited moment", () => {
+    expect(withSessionGroups(events, [{ title: 'X', memoryIds: ['a'] }]).error).toContain('La gran fiesta');
+  });
+});
+
+describe('groupByMonth', () => {
   it('groups by calendar month in order', () => {
     expect(groupByMonth(timelineItems([memory('z', '2025-01-03'), memory('y', '2024-11-30'), memory('x', '2025-01-20')], null))).toEqual([
       { title: 'Noviembre de 2024', memoryIds: ['y'] },

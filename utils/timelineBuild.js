@@ -1,7 +1,6 @@
 import { connectToDB } from '@utils/database';
 import { runAfterResponse } from '@utils/background';
 import { planTimeline } from '@utils/timeline';
-import { groupWithClaude } from '@utils/services/claude';
 import Event from '@models/event';
 import Memory from '@models/memory';
 import Settings, { getSettings } from '@models/settings';
@@ -24,8 +23,10 @@ export const rebuildDue = (settings, now = new Date()) =>
 
 // Regroups the memories into events. Skips when nothing changed or a rebuild
 // ran less than a minute ago, unless force (the admin's "Reorganizar").
-// Returns true when it rebuilt.
-export const rebuildTimeline = async ({ force = false, group = groupWithClaude } = {}) => {
+// Moments named in a Claude Code session (scripts/timeline.mjs) and the
+// admin's edits are kept; new memories are grouped by month. Returns true
+// when it rebuilt.
+export const rebuildTimeline = async ({ force = false } = {}) => {
   await connectToDB();
   const settings = await getSettings();
   const now = new Date();
@@ -41,11 +42,11 @@ export const rebuildTimeline = async ({ force = false, group = groupWithClaude }
   if (!claimed) return false;
 
   try {
-    const [memories, lockedEvents] = await Promise.all([
+    const [memories, events] = await Promise.all([
       Memory.find({}, { memory: 1, tag: 1, happenedAt: 1, createdAt: 1, milestone: 1 }).lean(),
-      Event.find({ locked: true }).lean(),
+      Event.find({ $or: [{ locked: true }, { source: 'claude' }] }).lean(),
     ]);
-    const planned = await planTimeline({ memories, lockedEvents, birthDate: settings.carloBirthDate, group });
+    const planned = planTimeline({ memories, keptEvents: events, birthDate: settings.carloBirthDate });
 
     // New events go in before the old ones go out, so the page never sees an
     // empty timeline mid-rebuild.
