@@ -18,6 +18,8 @@ const reply = (status, body) => Response.json(body, { status });
 export const POST = async (request) => {
   const { response, user, allowed } = await requireUser({ allowPending: true });
   if (response) return response;
+  // Carlo's account opens on its own day; the family code is not a way around it.
+  if (user.role === 'carlo') return reply(403, { error: 'Esta es la cuenta de Carlo: se abre sola cuando llegue el día.' });
   if (allowed) return reply(200, { joined: true });
 
   let body;

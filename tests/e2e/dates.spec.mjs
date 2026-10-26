@@ -18,7 +18,7 @@ test('the admin sets the birth date and every memory shows Carlo’s age', async
   await expect(page.getByText('Todavía no está guardada')).toBeVisible();
   await expectAccessible(page);
   await page.getByLabel('Fecha de nacimiento de Carlo').fill('2023-05-15');
-  await page.getByRole('button', { name: 'Guardar' }).click();
+  await page.getByRole('button', { name: 'Guardar', exact: true }).click();
   await expect(page.getByText('Carlo nació el 15 de mayo de 2023.')).toBeVisible();
 
   await page.goto('/');

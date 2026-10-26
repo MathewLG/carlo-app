@@ -51,7 +51,7 @@ export const buildMonthlyReminder = ({ now = new Date(), authors, birthDate, rec
   const text = `${lines.join('\n\n')}\n\nEscribir un recuerdo: ${link}\n\nPuedes apagar este correo en Admin → Carlo.`;
   const html = `<div style="font-family:system-ui,sans-serif;color:#14274A;max-width:32rem">
 ${lines.map((line) => `<p style="line-height:1.5">${escapeHtml(line)}</p>`).join('\n')}
-<p><a href="${escapeHtml(link)}" style="display:inline-block;background:#FFD23F;color:#14274A;border:2px solid #14274A;border-radius:999px;padding:.6rem 1.2rem;font-weight:700;text-decoration:none">Escribir un recuerdo</a></p>
+<p><a href="${escapeHtml(link)}" style="display:inline-block;background:#FFC93C;color:#14274A;border:2px solid #14274A;border-radius:999px;padding:.6rem 1.2rem;font-weight:700;text-decoration:none">Escribir un recuerdo</a></p>
 <p style="color:#46607F;font-size:.85rem">Puedes apagar este correo en Admin → Carlo.</p>
 </div>`;
   return { subject, html, text };
@@ -66,7 +66,7 @@ export const buildLetterOpened = ({ author, writtenOn, url }) => {
     text: `${line}\n\nLéela en Carlo App: ${url}`,
     html: `<div style="font-family:system-ui,sans-serif;color:#14274A;max-width:32rem">
 <p style="line-height:1.5">${escapeHtml(line)}</p>
-<p><a href="${escapeHtml(url)}" style="display:inline-block;background:#FFD23F;color:#14274A;border:2px solid #14274A;border-radius:999px;padding:.6rem 1.2rem;font-weight:700;text-decoration:none">Leer la carta</a></p>
+<p><a href="${escapeHtml(url)}" style="display:inline-block;background:#FFC93C;color:#14274A;border:2px solid #14274A;border-radius:999px;padding:.6rem 1.2rem;font-weight:700;text-decoration:none">Leer la carta</a></p>
 </div>`,
   };
 };

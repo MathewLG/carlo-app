@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 // Changes the signed-in person's own name in the app ("Mi nombre en Carlo
 // App"). An empty name goes back to the username.
 export const PATCH = async (request) => {
-  const { response, user } = await requireUser();
+  const { response, user } = await requireUser({ write: true });
   if (response) return response;
 
   let body;

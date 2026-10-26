@@ -10,7 +10,7 @@ export const reply = (status, body) => Response.json(body, { status });
 // The memory to attach a file to, if the signed-in user may change it.
 // Returns { user, memory } or { response }.
 export const loadEditableMemory = async (id) => {
-  const { response, user } = await requireUser();
+  const { response, user } = await requireUser({ write: true });
   if (response) return { response };
   if (!isValidObjectId(id)) return { response: reply(404, { error: 'Este recuerdo no existe' }) };
   await connectToDB();

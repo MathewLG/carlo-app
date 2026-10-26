@@ -1,6 +1,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET as getSettings, PATCH as updateSettings } from '@/app/api/settings/route';
 import { hashCode } from '@utils/joinCode';
+import { DEFAULT_WELCOME } from '@utils/carlo';
 import Settings from '@models/settings';
 import { makeAdmin, makeUser } from '../fixtures/people';
 import { clearDatabase, request, signInAs, startDatabase } from './setup';
@@ -23,16 +24,16 @@ afterEach(() => vi.useRealTimers());
 
 describe('/api/settings', () => {
   it('has no birth date until the admin sets one', async () => {
-    expect(await (await getSettings()).json()).toEqual({ carloBirthDate: null, monthlyReminder: true });
+    expect(await (await getSettings()).json()).toEqual({ carloBirthDate: null, monthlyReminder: true, carloCanRead: false, welcomeText: DEFAULT_WELCOME });
   });
 
   it('saves the birth date as a day, and the family reads it back the same', async () => {
     const response = await setBirthDate('2023-05-15');
-    expect(await response.json()).toEqual({ carloBirthDate: '2023-05-15', monthlyReminder: true });
+    expect(await response.json()).toMatchObject({ carloBirthDate: '2023-05-15', monthlyReminder: true });
     expect((await Settings.findOne()).carloBirthDate.toISOString()).toBe('2023-05-15T12:00:00.000Z');
 
     signInAs(await makeUser());
-    expect(await (await getSettings()).json()).toEqual({ carloBirthDate: '2023-05-15' });
+    expect(await (await getSettings()).json()).toEqual({ carloBirthDate: '2023-05-15', carloCanRead: false, welcomeText: DEFAULT_WELCOME });
   });
 
   it('never sends the family code, even hashed', async () => {
@@ -56,13 +57,18 @@ describe('/api/settings', () => {
   it('turns the monthly email off and on without touching the birth date; only the admin sees it', async () => {
     await setBirthDate('2023-05-15');
     const off = await updateSettings(request('/api/settings', { method: 'PATCH', body: { monthlyReminder: false } }));
-    expect(await off.json()).toEqual({ carloBirthDate: '2023-05-15', monthlyReminder: false });
+    expect(await off.json()).toMatchObject({ carloBirthDate: '2023-05-15', monthlyReminder: false });
     expect((await Settings.findOne()).monthlyReminder).toBe(false);
     const bad = await updateSettings(request('/api/settings', { method: 'PATCH', body: { monthlyReminder: 'no' } }));
     expect(bad.status).toBe(400);
 
     signInAs(await makeUser());
-    expect(await (await getSettings()).json()).toEqual({ carloBirthDate: '2023-05-15' });
+    expect(await (await getSettings()).json()).not.toHaveProperty('monthlyReminder');
+  });
+
+  it("never sends Carlo's email", async () => {
+    await Settings.updateOne({ key: 'app' }, { carloEmail: 'carlo@example.com' }, { upsert: true });
+    expect(await (await getSettings()).text()).not.toContain('carlo@example.com');
   });
 
   it('refuses a body that is not JSON', async () => {

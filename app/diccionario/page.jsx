@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import AuthorLink from '@components/AuthorLink';
 import useCarloBirthDate from '@components/useCarloBirthDate';
 import useFamilyData from '@components/useFamilyData';
+import { useCanWrite } from '@components/WriteLink';
 import { ageAt } from '@utils/age';
 import { parseDay, todayString } from '@utils/dates';
 import { formatDate } from '@utils/format';
@@ -145,6 +146,7 @@ export default function Dictionary() {
   const { session: sessionStatus, status, data: words, reload } = useFamilyData('/api/words');
   const [query, setQuery] = useState('');
   const [adding, setAdding] = useState(false);
+  const canWrite = useCanWrite();
 
   if (sessionStatus === 'unauthenticated') return <p className="status-text mt-12">Inicia sesión para ver el diccionario.</p>;
 
@@ -158,7 +160,7 @@ export default function Dictionary() {
       <p className="mt-3 text-lg text-ink-soft">Las palabras que dijiste a tu manera, y lo que querías decir.</p>
 
       <div className="mt-6">
-        {adding ? (
+        {!canWrite ? null : adding ? (
           <WordForm onDone={() => { setAdding(false); reload(); }} onCancel={() => setAdding(false)} />
         ) : (
           <button type="button" className="btn btn-sun" onClick={() => setAdding(true)}>Agregar una palabra</button>
@@ -168,7 +170,7 @@ export default function Dictionary() {
       {status === 'loading' && <p role="status" className="status-text mt-12">Cargando el diccionario…</p>}
       {status === 'error' && <p role="alert" className="status-text mt-12">No se pudo cargar el diccionario. Recarga la página.</p>}
       {status === 'ready' && words.length === 0 && (
-        <p className="status-text mt-12">Todavía no hay palabras. Agrega la primera que recuerdes.</p>
+        <p className="status-text mt-12">{canWrite ? 'Todavía no hay palabras. Agrega la primera que recuerdes.' : 'Todavía no hay palabras.'}</p>
       )}
       {status === 'ready' && words.length > 0 && (
         <>

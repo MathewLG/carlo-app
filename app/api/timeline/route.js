@@ -17,7 +17,7 @@ export const maxDuration = 60;
 // The timeline: events in order, each with its memories. If it is out of
 // date, it is rebuilt after this response and `updating` says so.
 export const GET = async () => {
-  const { response } = await requireUser();
+  const { response, user } = await requireUser();
   if (response) return response;
 
   await connectToDB();
@@ -34,6 +34,8 @@ export const GET = async () => {
   return Response.json({
     birthDate: settings.carloBirthDate ? toDayString(settings.carloBirthDate) : null,
     updating: Boolean(settings.timelineDirty),
+    // Carlo picks up where he left off.
+    resumeAt: user.role === 'carlo' ? (user.lastSeenEventId ?? null) : null,
     events: events
       .map((event) => ({
         id: String(event._id),

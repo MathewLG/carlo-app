@@ -3,6 +3,8 @@ import { requireUser } from '@utils/access';
 import Invite from '@models/invite';
 import User from '@models/user';
 import Memory from '@models/memory';
+import { getSettings } from '@models/settings';
+import { isCarloEmail } from '@utils/carlo';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,10 +27,11 @@ export const GET = async () => {
   if (response) return response;
 
   await connectToDB();
-  const [invites, users, counts] = await Promise.all([
+  const [invites, users, counts, settings] = await Promise.all([
     Invite.find().sort({ joinedAt: 1 }).lean(),
     User.find({}, 'email username role').lean(),
     Memory.aggregate([{ $group: { _id: '$creator', count: { $sum: 1 } } }]),
+    getSettings(),
   ]);
   const usersByEmail = new Map(users.map((u) => [u.email.toLowerCase(), u]));
   const memoriesByUser = new Map(counts.map((c) => [String(c._id), c.count]));
@@ -45,8 +48,9 @@ export const GET = async () => {
       memories: user ? memoriesByUser.get(String(user._id)) ?? 0 : 0,
     };
   });
+  // Carlo's account is not waiting to join: it opens on its own day.
   const pending = users
-    .filter((u) => !invited.has(u.email.toLowerCase()))
+    .filter((u) => !invited.has(u.email.toLowerCase()) && !isCarloEmail(settings, u.email))
     .map((u) => ({ email: u.email, username: u.username, firstSeen: u._id.getTimestamp() }));
 
   return reply(200, { members, pending });

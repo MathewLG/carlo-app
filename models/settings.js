@@ -25,6 +25,23 @@ const SettingsSchema = new Schema({
   },
   timelineBuiltAt: Date,
   timelineBuildingUntil: Date,
+  // Carlo's own account (utils/carlo.js): his email, the age his access
+  // opens at, whether it was opened early or paused, and his welcome.
+  carloEmail: {
+    type: String,
+    lowercase: true,
+    trim: true,
+  },
+  carloAccessAge: {
+    type: Number,
+    default: 15,
+  },
+  carloAccess: {
+    type: String,
+    enum: ['auto', 'open', 'paused'],
+    default: 'auto',
+  },
+  welcomeText: String,
   // The admin's monthly email: on unless turned off; lastReminderMonth
   // ('YYYY-MM') is the month already sent, so it goes out once.
   monthlyReminder: {

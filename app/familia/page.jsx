@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import Avatar from '@components/Avatar';
 import useFamilyData from '@components/useFamilyData';
+import WriteLink from '@components/WriteLink';
 
 const count = (n) => (n === 1 ? '1 recuerdo' : `${n} recuerdos`);
 
@@ -21,7 +22,7 @@ export default function Family() {
       {status === 'ready' && people.length === 0 && (
         <div className="mt-12 flex flex-col items-center gap-4">
           <p className="status-text">Todavía nadie ha escrito un recuerdo.</p>
-          <Link href="/create-memory" className="btn btn-sun">Escribir un recuerdo</Link>
+          <WriteLink />
         </div>
       )}
       {status === 'ready' && people.length > 0 && (

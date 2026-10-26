@@ -8,11 +8,15 @@ import { ageAt } from '@utils/age';
 import { parseDay } from '@utils/dates';
 import { authorName, formatDate } from '@utils/format';
 import AuthorLink from '@components/AuthorLink';
+import WriteLink, { useCanWrite } from '@components/WriteLink';
 import { MILESTONES } from '@utils/milestones';
 import { ageMarkers, MAX_TITLE_LENGTH } from '@utils/timeline';
+import useReadingPlace from '@components/useReadingPlace';
 
 const PREVIEW_LENGTH = 220;
 const REFRESH_MS = 15_000;
+// The very first build: nothing to show yet, so check back sooner.
+const FIRST_REFRESH_MS = 2_000;
 
 const send = async (url, method, body) => {
   const response = await fetch(url, {
@@ -54,9 +58,11 @@ function Milestones({ events }) {
           </li>
         ))}
       </ul>
-      <p className="mt-3 text-sm text-ink-soft">
-        Al escribir un recuerdo, elige “¿Es una primera vez?” para que tenga su propio momento.
-      </p>
+      {useCanWrite() && (
+        <p className="mt-3 text-sm text-ink-soft">
+          Al escribir un recuerdo, elige “¿Es una primera vez?” para que tenga su propio momento.
+        </p>
+      )}
     </section>
   );
 }
@@ -189,6 +195,11 @@ export default function Timeline() {
   const [reloadKey, setReloadKey] = useState(0);
   const [reorganizing, setReorganizing] = useState(false);
   const reload = useCallback(() => setReloadKey((k) => k + 1), []);
+  useReadingPlace({
+    active: session?.user?.role === 'carlo',
+    resumeAt: timeline?.resumeAt,
+    eventsKey: timeline?.events.map((e) => e.id).join(',') ?? '',
+  });
 
   useEffect(() => {
     if (status !== 'authenticated') return;
@@ -208,7 +219,7 @@ export default function Timeline() {
   // While it is being rebuilt, check back now and then.
   useEffect(() => {
     if (!timeline?.updating) return;
-    const timer = setTimeout(reload, REFRESH_MS);
+    const timer = setTimeout(reload, timeline.events.length ? REFRESH_MS : FIRST_REFRESH_MS);
     return () => clearTimeout(timer);
   }, [timeline, reload]);
 
@@ -255,14 +266,14 @@ export default function Timeline() {
       {events.length === 0 ? (
         <div className="mt-12 flex flex-col items-center gap-4">
           <p className="status-text">Todavía no hay recuerdos en la línea del tiempo.</p>
-          <Link href="/create-memory" className="btn btn-sun">Escribir un recuerdo</Link>
+          <WriteLink />
         </div>
       ) : (
         // The path: a line down the left on phones, down the middle on wide
         // screens, with the moments alternating sides.
         <ol className="timeline mt-10">
           {events.map((event, index) => (
-            <li key={event.id} className="timeline-item">
+            <li key={event.id} className="timeline-item" data-event-id={event.id}>
               {markers
                 .filter((m) => m.beforeIndex === index)
                 .map((m) => (
