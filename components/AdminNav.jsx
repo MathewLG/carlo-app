@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 const PAGES = [
   { href: '/admin/familia', label: 'Familia' },
   { href: '/admin/carlo', label: 'Carlo' },
+  { href: '/admin/respaldo', label: 'Respaldo' },
 ];
 
 // Tabs between the admin pages.

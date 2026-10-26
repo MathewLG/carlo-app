@@ -14,6 +14,8 @@
     "test:all": "npm run lint && npm run test:coverage && npm run build && npm run test:e2e"
   },
   "dependencies": {
+    "@vercel/blob": "^2.8.2",
+    "fflate": "^0.8.3",
     "mongoose": "^9.11.3",
     "next": "^16.4.3",
     "next-auth": "^4.24.15",
@@ -29,7 +31,13 @@
     "eslint-config-next": "^16.4.3",
     "mongodb-memory-server": "^11.3.0",
     "postcss": "^8",
+    "sharp": "^0.35.5",
     "tailwindcss": "^3.3.0",
     "vitest": "^5.0.5"
+  },
+  "overrides": {
+    "@vercel/cli-config": {
+      "zod": "4.6.7"
+    }
   }
 }

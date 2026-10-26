@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { MAX_MEMORY_LENGTH, MAX_TAG_LENGTH } from '@utils/validate';
 import { todayString } from '@utils/dates';
+import MediaFields from './media/MediaFields';
 
-const Form = ({ title, description, submitLabel, cancelHref, post, setPost, submitting, handleSubmit, error }) => (
+// media/setMedia: the photo and voice note, from emptyMedia() in media/prepareMedia.js.
+const Form = ({ title, description, submitLabel, cancelHref, post, setPost, media, setMedia, submitting, handleSubmit, error }) => (
   <section className="mx-auto mt-6 w-full max-w-2xl">
     <h1 className="text-4xl font-bold sm:text-5xl">{title}</h1>
     <p className="mt-3 text-lg text-ink-soft">{description}</p>
@@ -48,6 +50,8 @@ const Form = ({ title, description, submitLabel, cancelHref, post, setPost, subm
           className="field"
         />
       </label>
+
+      {media && <MediaFields media={media} setMedia={setMedia} />}
 
       {error && (
         <p role="alert" className="font-semibold text-danger">

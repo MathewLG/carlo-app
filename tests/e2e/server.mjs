@@ -1,6 +1,9 @@
 // Starts a throwaway MongoDB and the built app on top of it, for Playwright.
 // Run `npm run build` first; Playwright starts this through `webServer`.
 import { spawn } from 'node:child_process';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { createRequire } from 'node:module';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { APP_PORT, MONGO_PORT, MONGODB_DB, MONGODB_URI, NEXTAUTH_SECRET } from './env.mjs';
@@ -18,6 +21,9 @@ const env = {
   NEXTAUTH_SECRET,
   GOOGLE_ID: 'e2e-google-id',
   GOOGLE_CLIENT_SECRET: 'e2e-google-secret',
+  // Photos and voice notes go to a throwaway folder, never to Vercel Blob.
+  BLOB_READ_WRITE_TOKEN: '',
+  MEDIA_DIR: mkdtempSync(path.join(tmpdir(), 'carlo-e2e-media-')),
 };
 
 const nextBin = createRequire(import.meta.url).resolve('next/dist/bin/next');

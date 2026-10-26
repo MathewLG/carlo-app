@@ -13,6 +13,8 @@ npm run dev
 
 Local development and Vercel previews use the `carlo_app_preview` database; only the production deployment reads the real memories in `carlo_app`.
 
+Photos and voice notes go to the private Vercel Blob store when `BLOB_READ_WRITE_TOKEN` is set. Without it, as in local development and tests, they go to `.media-local/` (git-ignored). Vercel deployments refuse to run without the token.
+
 ## Tests
 
 | Command | Runs |

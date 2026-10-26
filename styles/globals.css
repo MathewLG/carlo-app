@@ -70,6 +70,19 @@
     @apply inline-flex min-h-[32px] items-center rounded-full border-2 border-ink bg-sky px-3 font-display text-sm font-semibold text-ink;
   }
 
+  /* An instant-camera print: white frame, wide bottom edge for a handwritten
+     caption, a small tilt and the same hard shadow as the stickers. */
+  .instant-photo {
+    @apply block w-full border-2 border-ink bg-white p-3 pb-2 text-left shadow-sticker;
+    transform: rotate(-1.5deg);
+  }
+  .instant-photo img {
+    @apply block aspect-square w-full border border-ink/20 object-cover;
+  }
+  .instant-photo figcaption {
+    @apply min-h-[2.5rem] px-1 pt-2 font-hand text-2xl leading-tight text-ink;
+  }
+
   .status-text {
     @apply text-center text-lg text-ink-soft;
   }

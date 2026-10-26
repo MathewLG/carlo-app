@@ -1,9 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Form from '@components/Form';
 import { toDayString } from '@utils/dates';
+import { emptyMedia, saveMedia } from '@components/media/prepareMedia';
 
 export default function EditMemory() {
   const { memory: id } = useParams();
@@ -12,7 +13,12 @@ export default function EditMemory() {
   const [post, setPost] = useState({ memory: '', tag: '', happenedAt: '' });
   const [loadState, setLoadState] = useState('loading'); // loading | ready | forbidden | missing | error
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  // A new memory whose photo or voice note failed lands here with ?aviso=<why>.
+  const notice = useSearchParams().get('aviso');
+  const [error, setError] = useState(
+    notice ? `El recuerdo se guardó, pero el archivo no: ${notice} Inténtalo de nuevo aquí.` : '',
+  );
+  const [media, setMedia] = useState(emptyMedia);
 
   useEffect(() => {
     if (status !== 'authenticated') return;
@@ -28,6 +34,7 @@ export default function EditMemory() {
           tag: memory.tag,
           happenedAt: memory.happenedAt ? toDayString(new Date(memory.happenedAt)) : '',
         });
+        setMedia(emptyMedia(memory));
         setLoadState('ready');
       })
       .catch((err) => {
@@ -47,6 +54,12 @@ export default function EditMemory() {
         body: JSON.stringify(post),
       });
       if (response.ok) {
+        try {
+          await saveMedia(id, media);
+        } catch (mediaError) {
+          setError(`Los cambios del texto se guardaron, pero el archivo no: ${mediaError.message}`);
+          return;
+        }
         router.push(`/memories/${id}`);
         router.refresh();
         return;
@@ -89,6 +102,8 @@ export default function EditMemory() {
       cancelHref={`/memories/${id}`}
       post={post}
       setPost={setPost}
+      media={media}
+      setMedia={setMedia}
       submitting={submitting}
       handleSubmit={saveMemory}
       error={error}
