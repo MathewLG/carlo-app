@@ -32,7 +32,8 @@ vi.mock('next-auth', async (importOriginal) => ({ ...(await importOriginal()), g
 const FAMILY_CODE = 'tres palabras azules';
 
 // How each action in the permission table is performed. `ctx` holds the
-// memory and dictionary word being acted on, and another family member to remove.
+// memory, sealed letter and dictionary word being acted on, and another
+// family member to remove.
 const ACTIONS = {
   'list memories': () => listMemories(request('/api/memory')),
   'read a memory': ({ id }) => getMemory(request(`/api/memory/${id}`), routeParams({ id })),
@@ -70,6 +71,12 @@ const ACTIONS = {
   'add a word': () => addWord(request('/api/words', { method: 'POST', body: WORD })),
   'edit a word': ({ word }) =>
     editWord(request(`/api/words/${word._id}`, { method: 'PATCH', body: { ...WORD, meaning: 'agüita' } }), routeParams({ id: String(word._id) })),
+  'change a sealed letter': ({ letter }) =>
+    editMemory(request(`/api/memory/${letter._id}`, { method: 'PATCH', body: { memory: 'X', tag: '#x' } }), routeParams({ id: String(letter._id) })),
+  'delete a sealed letter': ({ letter }) =>
+    deleteMemory(request(`/api/memory/${letter._id}`, { method: 'DELETE' }), routeParams({ id: String(letter._id) })),
+  "see a sealed letter's photo": ({ letter }) =>
+    getMedia(request(`/api/media/${letter._id}/photo`), routeParams({ id: String(letter._id), kind: 'photo' })),
   'delete a word': ({ word }) => deleteWord(request(`/api/words/${word._id}`, { method: 'DELETE' }), routeParams({ id: String(word._id) })),
 };
 
@@ -95,6 +102,11 @@ describe.each(PERMISSIONS)('$action', (row) => {
     await memory.save();
     await saveFile(memory.photo.path, FILES.jpeg.bytes, 'image/jpeg');
     const other = await makeUser();
+    // A sealed letter by the same author, with a photo, opening in 2039.
+    const letter = await makeMemory(author, { unlockAt: new Date('2039-03-12T12:00:00Z') });
+    letter.photo = { path: `media/${letter._id}/photo-0c0c0c.jpg`, mime: 'image/jpeg' };
+    await letter.save();
+    await saveFile(letter.photo.path, FILES.jpeg.bytes, 'image/jpeg');
     const word = await Word.create({ ...WORD, saidAt: new Date('2024-05-15T12:00:00Z'), creator: author._id });
     const event = await Event.create({ title: 'Mayo', memoryIds: [memory._id], startDay: '2024-05-01', endDay: '2024-05-01', source: 'mes' });
     if (role === 'visitante') signOut();
@@ -103,7 +115,7 @@ describe.each(PERMISSIONS)('$action', (row) => {
     if (role === 'familiar') signInAs(await makeUser());
     if (role === 'admin') signInAs(await makeAdmin());
 
-    const response = await ACTIONS[row.action]({ id: memory._id.toString(), other, event, word });
+    const response = await ACTIONS[row.action]({ id: memory._id.toString(), other, event, word, letter });
 
     expect(response.status).toBe(row[role]);
   });

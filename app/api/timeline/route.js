@@ -7,6 +7,7 @@ import Event from '@models/event';
 import Memory from '@models/memory';
 import Word from '@models/word';
 import { publicWord } from '@utils/words';
+import { isLocked } from '@utils/letters';
 import { PUBLIC_FIELDS } from '@models/user';
 import { getSettings } from '@models/settings';
 
@@ -33,16 +34,20 @@ export const GET = async () => {
   return Response.json({
     birthDate: settings.carloBirthDate ? toDayString(settings.carloBirthDate) : null,
     updating: Boolean(settings.timelineDirty),
-    events: events.map((event) => ({
-      id: String(event._id),
-      title: event.title,
-      startDay: event.startDay,
-      endDay: event.endDay,
-      source: event.source,
-      locked: event.locked,
-      // Each memory's JSON swaps file paths for app URLs (models/memory.js).
-      memories: event.memoryIds.map((id) => byId.get(String(id))).filter(Boolean),
-      words: (event.wordIds ?? []).map((id) => wordById.get(String(id))).filter(Boolean),
-    })),
+    events: events
+      .map((event) => ({
+        id: String(event._id),
+        title: event.title,
+        startDay: event.startDay,
+        endDay: event.endDay,
+        source: event.source,
+        locked: event.locked,
+        // Each memory's JSON swaps file paths for app URLs (models/memory.js).
+        // A letter sealed after the last rebuild stays hidden until it opens.
+        memories: event.memoryIds.map((id) => byId.get(String(id))).filter((m) => m && !isLocked(m)),
+        words: (event.wordIds ?? []).map((id) => wordById.get(String(id))).filter(Boolean),
+      }))
+      // A moment whose memories are all sealed letters has nothing to show yet.
+      .filter((event) => event.memories.length || event.words.length),
   });
 };

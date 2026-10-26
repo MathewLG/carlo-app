@@ -1,4 +1,5 @@
 import { Schema, model, models } from 'mongoose';
+import { isLocked } from '@utils/letters';
 
 // `path` is where the file lives in storage (utils/services/storage.js). It
 // never leaves the server: JSON replaces it with an app URL that checks access.
@@ -49,6 +50,18 @@ const MemorySchema = new Schema(
     },
     photo: PhotoSchema,
     voice: VoiceSchema,
+    // Carta con candado: sealed until this day (noon UTC; see utils/letters.js).
+    // lockAge is set when it was sealed until an age ("cuando cumplas 15").
+    unlockAt: {
+      type: Date,
+    },
+    lockAge: {
+      type: Number,
+    },
+    // When the admin was told it opened, so the daily job never emails twice.
+    openedNotifiedAt: {
+      type: Date,
+    },
   },
   // New memories get createdAt/updatedAt. Older ones don't have them, but
   // their _id still carries the creation time.
@@ -74,7 +87,10 @@ export const publicMedia = (memory) => ({
 });
 
 MemorySchema.set('toJSON', {
-  transform: (doc, ret) => Object.assign(ret, publicMedia(ret)),
+  transform: (doc, ret) => {
+    delete ret.openedNotifiedAt;
+    return Object.assign(ret, publicMedia(ret), { locked: isLocked(ret) });
+  },
 });
 
 const Memory = models.Memory || model('Memory', MemorySchema);

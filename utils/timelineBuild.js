@@ -44,7 +44,7 @@ export const rebuildTimeline = async ({ force = false } = {}) => {
 
   try {
     const [memories, events, firstWords] = await Promise.all([
-      Memory.find({}, { memory: 1, tag: 1, happenedAt: 1, createdAt: 1, milestone: 1 }).lean(),
+      Memory.find({}, { memory: 1, tag: 1, happenedAt: 1, createdAt: 1, milestone: 1, unlockAt: 1 }).lean(),
       Event.find({ $or: [{ locked: true }, { source: 'claude' }] }).lean(),
       Word.find({ firstWord: true }, { word: 1, saidAt: 1 }).lean(),
     ]);

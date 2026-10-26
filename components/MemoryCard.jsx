@@ -5,11 +5,15 @@ import { authorName, memoryDate, formatDate } from '@utils/format';
 import { ageAt } from '@utils/age';
 import InstantPhoto from './media/InstantPhoto';
 import VoiceNote from './media/VoiceNote';
+import SealedEnvelope from './SealedEnvelope';
+import { LetterNote } from './LetterNote';
 
 const PREVIEW_LENGTH = 280;
 
 // birthDate: Carlo's, to show his age on the day; null hides it.
 const MemoryCard = ({ memory, onTagClick, birthDate = null }) => {
+  // Someone else's sealed letter arrives without its words: only the envelope shows.
+  if (memory.locked && memory.memory === undefined) return <SealedEnvelope memory={memory} />;
   // A memory can outlive its author's account, so creator may be missing.
   const author = authorName(memory.creator);
   const isLong = memory.memory.length > PREVIEW_LENGTH;
@@ -33,6 +37,8 @@ const MemoryCard = ({ memory, onTagClick, birthDate = null }) => {
           </p>
         </div>
       </header>
+
+      <LetterNote memory={memory} className="mt-4" />
 
       {memory.photo && <InstantPhoto photo={memory.photo} className="mt-4" />}
 

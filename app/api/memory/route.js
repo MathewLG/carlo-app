@@ -1,6 +1,7 @@
 import { isValidObjectId } from 'mongoose';
 import { connectToDB } from '@utils/database';
-import { requireUser } from '@utils/access';
+import { redactLocked, requireUser } from '@utils/access';
+import { openBy } from '@utils/letters';
 import { escapeRegex } from '@utils/validate';
 import { memoryDate } from '@utils/format';
 import Memory from '@models/memory';
@@ -34,6 +35,10 @@ export const GET = async (request) => {
     const pattern = new RegExp(escapeRegex(q), 'i');
     filter.$or = [{ memory: pattern }, { tag: pattern }];
   }
+  // A sealed letter's words and tag are only searchable by its author.
+  if (q || tag) {
+    filter.$and = [{ $or: [{ unlockAt: null }, { unlockAt: { $lte: openBy() } }, { creator: user._id }] }];
+  }
 
   try {
     await connectToDB();
@@ -43,7 +48,7 @@ export const GET = async (request) => {
       .populate('creator', PUBLIC_FIELDS);
     if (oldest) memories.sort((a, b) => memoryDate(a) - memoryDate(b));
 
-    return Response.json(memories, { status: 200 });
+    return Response.json(memories.map((m) => redactLocked(m, user)), { status: 200 });
   } catch (error) {
     console.error('GET /api/memory failed', error);
     return Response.json({ error: 'No se pudieron descargar los recuerdos' }, { status: 500 });

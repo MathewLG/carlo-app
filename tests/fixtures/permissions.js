@@ -33,4 +33,9 @@ export const PERMISSIONS = [
   { action: 'add a word', visitante: 401, pendiente: 403, autor: 201, familiar: 201, admin: 201 },
   { action: 'edit a word', visitante: 401, pendiente: 403, autor: 200, familiar: 403, admin: 200 },
   { action: 'delete a word', visitante: 401, pendiente: 403, autor: 204, familiar: 403, admin: 204 },
+  // A carta con candado before its day: its author's alone, except that the
+  // admin may delete it and fetch its files for the backup.
+  { action: 'change a sealed letter', visitante: 401, pendiente: 403, autor: 200, familiar: 403, admin: 403 },
+  { action: 'delete a sealed letter', visitante: 401, pendiente: 403, autor: 204, familiar: 403, admin: 204 },
+  { action: "see a sealed letter's photo", visitante: 401, pendiente: 403, autor: 200, familiar: 404, admin: 200 },
 ];

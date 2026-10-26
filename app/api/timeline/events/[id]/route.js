@@ -2,8 +2,7 @@ import { isValidObjectId } from 'mongoose';
 import { connectToDB } from '@utils/database';
 import { requireUser } from '@utils/access';
 import { toDayString } from '@utils/dates';
-import { memoryDate } from '@utils/format';
-import { MAX_TITLE_LENGTH } from '@utils/timeline';
+import { MAX_TITLE_LENGTH, timelineDate } from '@utils/timeline';
 import Event from '@models/event';
 import Memory from '@models/memory';
 
@@ -13,8 +12,8 @@ const reply = (status, body) => Response.json(body, { status });
 
 // Recomputes the first and last day of an event from its memories.
 const refreshSpan = async (event) => {
-  const memories = await Memory.find({ _id: { $in: event.memoryIds } }, { happenedAt: 1, createdAt: 1 }).lean();
-  const days = memories.map((m) => toDayString(memoryDate(m))).sort();
+  const memories = await Memory.find({ _id: { $in: event.memoryIds } }, { happenedAt: 1, createdAt: 1, unlockAt: 1 }).lean();
+  const days = memories.map((m) => toDayString(timelineDate(m))).sort();
   event.startDay = days[0];
   event.endDay = days.at(-1);
 };

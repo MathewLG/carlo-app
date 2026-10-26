@@ -2,6 +2,7 @@ import { ageAt } from '@utils/age';
 import { memoryDate } from '@utils/format';
 import { toDayString } from '@utils/dates';
 import { milestoneTitle } from '@utils/milestones';
+import { isLocked } from '@utils/letters';
 
 const MONTHS = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -10,11 +11,15 @@ const MONTHS = [
 export const MAX_TITLE_LENGTH = 60;
 const PREVIEW_LENGTH = 300;
 
+// Where a memory sits on the timeline: the day it happened, except a carta
+// con candado, which joins on the day it opens.
+export const timelineDate = (memory) => (memory.unlockAt ? new Date(memory.unlockAt) : memoryDate(memory));
+
 // What a session sees of each memory: no author, no files, only the start
 // of the text, the day and Carlo's age.
 export const timelineItems = (memories, birthDate) =>
   memories.map((m) => {
-    const date = memoryDate(m);
+    const date = timelineDate(m);
     return {
       id: String(m._id),
       day: toDayString(date),
@@ -86,14 +91,16 @@ const span = (memoryIds, dayById) => {
 // A first word's moment, speaking to Carlo.
 export const firstWordTitle = (word) => `Dijiste «${word}»`;
 
-// The whole timeline, in order. Kept events (the admin's edits and moments
+// The whole timeline, in order. Sealed letters are left out until they open.
+// Kept events (the admin's edits and moments
 // named in a session) stay as they are, minus memories that no longer
 // exist; every milestone memory not in one becomes its own event; the rest
 // are grouped by month until the next session names them. Each first word
 // from the dictionary is a moment of its own.
 // Returns [{ title, memoryIds, wordIds?, startDay, endDay, source, locked }].
-export const planTimeline = ({ memories, keptEvents = [], birthDate = null, firstWords = [] }) => {
-  const items = timelineItems(memories, birthDate);
+export const planTimeline = ({ memories, keptEvents = [], birthDate = null, firstWords = [], now = new Date() }) => {
+  // Sealed letters stay off the timeline until they open.
+  const items = timelineItems(memories.filter((m) => !isLocked(m, now)), birthDate);
   const dayById = new Map(items.map((i) => [i.id, i.day]));
   const events = [];
   const placed = new Set();

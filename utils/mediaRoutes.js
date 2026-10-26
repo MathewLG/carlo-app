@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { isValidObjectId } from 'mongoose';
 import { connectToDB } from '@utils/database';
-import { canEdit, requireUser } from '@utils/access';
+import { canChange, requireUser } from '@utils/access';
 import { extensionFor, MAX_FILE_BYTES, sniffType } from '@utils/media';
 import Memory from '@models/memory';
 
@@ -16,7 +16,7 @@ export const loadEditableMemory = async (id) => {
   await connectToDB();
   const memory = await Memory.findById(id);
   if (!memory) return { response: reply(404, { error: 'Este recuerdo no existe' }) };
-  if (!canEdit(user, memory)) {
+  if (!canChange(user, memory)) {
     return { response: reply(403, { error: 'Solo quien escribió este recuerdo puede cambiarlo' }) };
   }
   return { user, memory };
