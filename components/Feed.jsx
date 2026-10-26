@@ -14,7 +14,8 @@ const Status = ({ children, role = 'status' }) => (
 );
 
 // mine: only the signed-in user's memories (used on /profile).
-const Feed = ({ mine = false }) => {
+// author: only that person's memories, in the order they happened (/familia/[id]).
+const Feed = ({ mine = false, author = null }) => {
   const { status } = useSession();
   const birthDate = useCarloBirthDate();
   const [searchText, setSearchText] = useState('');
@@ -23,7 +24,7 @@ const Feed = ({ mine = false }) => {
   const [reloadKey, setReloadKey] = useState(0);
   // The last finished request. Until the current one finishes, the feed shows loading.
   const [result, setResult] = useState({ key: null, state: 'loading', memories: [] });
-  const requestKey = `${query}|${tag}|${mine}|${reloadKey}`;
+  const requestKey = `${query}|${tag}|${mine}|${author}|${reloadKey}`;
   const loadState = result.key === requestKey ? result.state : 'loading'; // loading | ready | error
   const memories = result.memories;
 
@@ -41,6 +42,10 @@ const Feed = ({ mine = false }) => {
     if (query) params.set('q', query);
     if (tag) params.set('tag', tag);
     if (mine) params.set('mine', '1');
+    if (author) {
+      params.set('author', author);
+      params.set('order', 'oldest');
+    }
 
     fetch(`/api/memory?${params}`, { signal: controller.signal })
       .then((response) => {
@@ -55,7 +60,7 @@ const Feed = ({ mine = false }) => {
       });
 
     return () => controller.abort();
-  }, [status, query, tag, mine, requestKey]);
+  }, [status, query, tag, mine, author, requestKey]);
 
   if (status === 'loading') {
     return (
@@ -132,7 +137,13 @@ const Feed = ({ mine = false }) => {
         </Status>
       )}
 
-      {loadState === 'ready' && memories.length === 0 && !filtering && (
+      {loadState === 'ready' && memories.length === 0 && !filtering && author && (
+        <Status>
+          <p className="status-text">Todavía no ha escrito ningún recuerdo.</p>
+        </Status>
+      )}
+
+      {loadState === 'ready' && memories.length === 0 && !filtering && !author && (
         <Status>
           <p className="status-text">
             {mine ? 'Todavía no has escrito ningún recuerdo.' : 'Todavía no hay recuerdos. Escribe el primero.'}

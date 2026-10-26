@@ -60,6 +60,14 @@ describe('planTimeline', () => {
     expect(events.map((e) => e.title)).toEqual(['Diciembre de 2024']);
   });
 
+  it('gives each first word from the dictionary its own moment, in date order', () => {
+    const events = planTimeline({ memories: [memories[3]], firstWords: [{ _id: 'w1', word: 'awa', saidAt: day('2024-08-01') }] });
+    expect(events).toEqual([
+      { title: 'Dijiste «awa»', memoryIds: [], wordIds: ['w1'], startDay: '2024-08-01', endDay: '2024-08-01', source: 'palabra', locked: false },
+      { title: 'Diciembre de 2024', memoryIds: ['d'], startDay: '2024-12-24', endDay: '2024-12-24', source: 'mes', locked: false },
+    ]);
+  });
+
   it('returns nothing for no memories', () => {
     expect(planTimeline({ memories: [] })).toEqual([]);
   });

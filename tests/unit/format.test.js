@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate, memoryDate } from '@utils/format';
+import { authorName, formatDate, memoryDate } from '@utils/format';
 
 describe('memoryDate', () => {
   it('prefers the day it happened over the day it was written', () => {
@@ -26,5 +26,13 @@ describe('formatDate', () => {
 
   it('writes the date in Mexican Spanish', () => {
     expect(formatDate(new Date('2026-10-25T18:00:00Z'))).toBe('25 de octubre de 2026');
+  });
+});
+
+describe('authorName', () => {
+  it('prefers the name the person chose, then their username, then Familia', () => {
+    expect(authorName({ username: 'rosa', displayName: 'Abuela Rosa' })).toBe('Abuela Rosa');
+    expect(authorName({ username: 'rosa', displayName: '' })).toBe('rosa');
+    expect(authorName(null)).toBe('Familia');
   });
 });

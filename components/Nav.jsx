@@ -15,6 +15,14 @@ const Nav = () => {
   const menuRef = useRef(null);
   const user = session?.user;
   const isAdmin = user?.role === 'admin';
+  const links = [
+    { href: '/linea-del-tiempo', label: 'Línea del tiempo' },
+    { href: '/familia', label: 'Familia' },
+    { href: '/diccionario', label: 'Diccionario' },
+    { href: '/profile', label: 'Mis recuerdos' },
+    ...(isAdmin ? [{ href: '/admin/familia', label: 'Admin', section: '/admin' }] : []),
+  ];
+  const current = (link) => (pathname === link.href || pathname.startsWith(`${link.section ?? link.href}/`) ? 'page' : undefined);
 
   // Close the mobile menu on Escape or a tap outside it.
   useEffect(() => {
@@ -45,28 +53,18 @@ const Nav = () => {
       <div className="hidden items-center gap-4 lg:flex">
         {user ? (
           <>
-            <Link
-              href="/linea-del-tiempo"
-              className="link"
-              aria-current={pathname === '/linea-del-tiempo' ? 'page' : undefined}
-            >
-              Línea del tiempo
-            </Link>
-            {isAdmin && (
-              <Link href="/admin/familia" className="link" aria-current={pathname === '/admin/familia' ? 'page' : undefined}>
-                Familia
+            {links.map((link) => (
+              <Link key={link.href} href={link.href} className="link" aria-current={current(link)}>
+                {link.label}
               </Link>
-            )}
-            <Link href="/profile" className="link" aria-current={pathname === '/profile' ? 'page' : undefined}>
-              Mis recuerdos
-            </Link>
+            ))}
             <Link href="/create-memory" className="btn btn-sun">
               Escribir un recuerdo
             </Link>
             <button type="button" onClick={() => signOut()} className="btn btn-outline">
               Cerrar sesión
             </button>
-            <Avatar image={user.image} name={user.username || user.name} />
+            <Avatar image={user.image} name={user.displayName || user.username || user.name} />
           </>
         ) : (
           status === 'unauthenticated' && signInButton
@@ -85,7 +83,7 @@ const Nav = () => {
               onClick={() => setMenuOpenOn(menuOpen ? null : pathname)}
               className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full"
             >
-              <Avatar image={user.image} name={user.username || user.name} />
+              <Avatar image={user.image} name={user.displayName || user.username || user.name} />
             </button>
             {menuOpen && (
               <div
@@ -95,17 +93,11 @@ const Nav = () => {
                 <Link href="/create-memory" className="btn btn-sun">
                   Escribir un recuerdo
                 </Link>
-                <Link href="/linea-del-tiempo" className="btn btn-outline">
-                  Línea del tiempo
-                </Link>
-                <Link href="/profile" className="btn btn-outline">
-                  Mis recuerdos
-                </Link>
-                {isAdmin && (
-                  <Link href="/admin/familia" className="btn btn-outline">
-                    Familia
+                {links.map((link) => (
+                  <Link key={link.href} href={link.href} className="btn btn-outline" aria-current={current(link)}>
+                    {link.label}
                   </Link>
-                )}
+                ))}
                 <button type="button" onClick={() => signOut()} className="btn btn-outline">
                   Cerrar sesión
                 </button>

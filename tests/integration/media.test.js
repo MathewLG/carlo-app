@@ -8,6 +8,7 @@ import { DELETE as deleteMemory, GET as getMemory } from '@/app/api/memory/[id]/
 import { GET as getBackup } from '@/app/api/admin/backup/route';
 import { MAX_FILE_BYTES } from '@utils/media';
 import Memory from '@models/memory';
+import Word from '@models/word';
 import { bigFile, FILES } from '../fixtures/files';
 import { makeAdmin, makeMemory, makeUser } from '../fixtures/people';
 import { clearDatabase, request, routeParams, signInAs, startDatabase, uploadRequest } from './setup';
@@ -222,5 +223,18 @@ describe('/api/admin/backup', () => {
     });
     expect(json.memories[0].photo).toBeUndefined();
     expect(JSON.stringify(json)).not.toMatch(/\/(photo|voice)-[0-9a-f]{24}\./);
+  });
+
+  it('includes the Diccionario A to Z, with the name each author chose', async () => {
+    const rosa = await makeUser({ username: 'rosa', displayName: 'Abuela Rosa' });
+    await Word.create({ creator: rosa._id, word: 'tete', meaning: 'chupón', saidAt: new Date('2024-03-01T12:00:00Z') });
+    await Word.create({ creator: rosa._id, word: 'awa', meaning: 'agua', saidAt: new Date('2024-02-01T12:00:00Z'), firstWord: true });
+    signInAs(await makeAdmin());
+
+    const { words } = await (await getBackup()).json();
+    expect(words).toEqual([
+      { word: 'awa', meaning: 'agua', day: '2024-02-01', heardBy: '', firstWord: true, author: 'Abuela Rosa' },
+      { word: 'tete', meaning: 'chupón', day: '2024-03-01', heardBy: '', firstWord: false, author: 'Abuela Rosa' },
+    ]);
   });
 });

@@ -40,6 +40,7 @@ export const PATCH = async (request, { params }) => {
   await connectToDB();
   const event = await Event.findById(id);
   if (!event) return reply(404, { error: 'Ese momento no existe' });
+  if (event.source === 'palabra') return reply(400, { error: 'Las palabras se cambian en el Diccionario' });
 
   if (typeof body?.title === 'string') {
     const title = body.title.trim();
@@ -56,6 +57,7 @@ export const PATCH = async (request, { params }) => {
   if (!isValidObjectId(otherId) || String(otherId) === id) return reply(400, { error: 'Solicitud inválida' });
   const other = await Event.findById(otherId);
   if (!other) return reply(404, { error: 'Ese momento no existe' });
+  if (other.source === 'palabra') return reply(400, { error: 'Las palabras se cambian en el Diccionario' });
 
   if (body.mergeWith) {
     event.memoryIds.push(...other.memoryIds);

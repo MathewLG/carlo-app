@@ -6,6 +6,7 @@ import { promisify } from 'node:util';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import Event from '@models/event';
 import Settings from '@models/settings';
+import Word from '@models/word';
 import { makeMemory, makeUser } from '../fixtures/people';
 import { clearDatabase, startDatabase } from './setup';
 
@@ -97,6 +98,15 @@ describe('scripts/timeline.mjs', () => {
 
     const refused = await failure(script('apply', await groupsFile([{ title: 'X', memoryIds: [String(party._id)] }]), '--apply'));
     expect(refused).toContain('"La gran fiesta" was edited by the admin');
+  });
+
+  it("keeps first words from the dictionary as their own moments", async () => {
+    const { xmas } = await seed();
+    await Word.create({ creator: xmas.creator, word: 'awa', meaning: 'agua', saidAt: day('2024-03-01'), firstWord: true });
+    await script('apply', await groupsFile([{ title: 'Navidad', memoryIds: [String(xmas._id)] }]), '--apply');
+    const word = await Event.findOne({ source: 'palabra' });
+    expect(word.toObject()).toMatchObject({ title: 'Dijiste «awa»', startDay: '2024-03-01', memoryIds: [] });
+    expect(word.wordIds).toHaveLength(1);
   });
 
   it('saves even before the site has stored any settings', async () => {

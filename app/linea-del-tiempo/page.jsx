@@ -6,7 +6,8 @@ import InstantPhoto from '@components/media/InstantPhoto';
 import VoiceNote from '@components/media/VoiceNote';
 import { ageAt } from '@utils/age';
 import { parseDay } from '@utils/dates';
-import { formatDate } from '@utils/format';
+import { authorName, formatDate } from '@utils/format';
+import AuthorLink from '@components/AuthorLink';
 import { MILESTONES } from '@utils/milestones';
 import { ageMarkers, MAX_TITLE_LENGTH } from '@utils/timeline';
 
@@ -31,6 +32,8 @@ const dateRange = (event) => {
 
 function Milestones({ events }) {
   const recorded = new Set(events.flatMap((e) => e.memories.map((m) => m.milestone)).filter(Boolean));
+  // A first word from the Diccionario counts too.
+  if (events.some((e) => e.source === 'palabra')) recorded.add('Primera palabra');
   const others = [...recorded].filter((label) => !MILESTONES.some((m) => m.label === label));
   return (
     <section aria-labelledby="firsts-title" className="sticker mt-8">
@@ -58,12 +61,39 @@ function Milestones({ events }) {
   );
 }
 
+// A first word's moment: the word as he said it, from the Diccionario.
+function WordMoment({ event, birthDate }) {
+  const age = ageAt(birthDate, parseDay(event.startDay));
+  return (
+    <article className="sticker" aria-labelledby={`event-${event.id}`}>
+      <h2 id={`event-${event.id}`} className="text-2xl font-bold leading-tight">{event.title}</h2>
+      <p className="mt-1 text-sm text-ink-soft">
+        {dateRange(event)}
+        {age && <> · {age}</>}
+      </p>
+      {event.words.map((word) => (
+        <div key={word.id} className="mt-4">
+          <p className="font-display text-3xl font-bold">«{word.word}»</p>
+          <p className="mt-1 leading-relaxed">Querías decir: {word.meaning}</p>
+          <p className="mt-2 flex flex-wrap gap-3 text-sm text-ink-soft">
+            {word.heardBy && <span>Lo escuchó: {word.heardBy}</span>}
+            <Link href="/diccionario" className="link">Ver el Diccionario</Link>
+          </p>
+        </div>
+      ))}
+    </article>
+  );
+}
+
+// Memories can move between, and merge with, moments made of memories only.
+const editable = (event) => event?.source !== 'palabra';
+
 function EventCard({ event, index, events, birthDate, admin, onChange }) {
   const [renaming, setRenaming] = useState(false);
   const [title, setTitle] = useState(event.title);
   const [error, setError] = useState('');
-  const previous = events[index - 1];
-  const next = events[index + 1];
+  const previous = events.slice(0, index).findLast(editable);
+  const next = events.slice(index + 1).find(editable);
   const age = ageAt(birthDate, parseDay(event.startDay));
 
   const run = async (url, body) => {
@@ -115,7 +145,7 @@ function EventCard({ event, index, events, birthDate, admin, onChange }) {
               </p>
               {memory.voice && <VoiceNote voice={memory.voice} />}
               <p className="flex flex-wrap items-center gap-3 text-sm text-ink-soft">
-                <span>{memory.creator?.username ?? 'Familia'}</span>
+                <AuthorLink person={memory.creator} className="font-semibold hover:underline">{authorName(memory.creator)}</AuthorLink>
                 <Link href={`/memories/${memory._id}`} className="link">
                   {long ? 'Leer completo' : 'Abrir'}
                 </Link>
@@ -239,7 +269,11 @@ export default function Timeline() {
                   <p key={m.label} className="timeline-marker">{m.label}</p>
                 ))}
               <div className="timeline-card">
-                <EventCard event={event} index={index} events={events} birthDate={birthDate} admin={admin} onChange={reload} />
+                {editable(event) ? (
+                  <EventCard event={event} index={index} events={events} birthDate={birthDate} admin={admin} onChange={reload} />
+                ) : (
+                  <WordMoment event={event} birthDate={birthDate} />
+                )}
               </div>
             </li>
           ))}

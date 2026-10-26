@@ -3,6 +3,7 @@ import { runAfterResponse } from '@utils/background';
 import { planTimeline } from '@utils/timeline';
 import Event from '@models/event';
 import Memory from '@models/memory';
+import Word from '@models/word';
 import Settings, { getSettings } from '@models/settings';
 
 export const REBUILD_EVERY_MS = 60 * 1000;
@@ -42,11 +43,12 @@ export const rebuildTimeline = async ({ force = false } = {}) => {
   if (!claimed) return false;
 
   try {
-    const [memories, events] = await Promise.all([
+    const [memories, events, firstWords] = await Promise.all([
       Memory.find({}, { memory: 1, tag: 1, happenedAt: 1, createdAt: 1, milestone: 1 }).lean(),
       Event.find({ $or: [{ locked: true }, { source: 'claude' }] }).lean(),
+      Word.find({ firstWord: true }, { word: 1, saidAt: 1 }).lean(),
     ]);
-    const planned = planTimeline({ memories, keptEvents: events, birthDate: settings.carloBirthDate });
+    const planned = planTimeline({ memories, keptEvents: events, birthDate: settings.carloBirthDate, firstWords });
 
     // New events go in before the old ones go out, so the page never sees an
     // empty timeline mid-rebuild.

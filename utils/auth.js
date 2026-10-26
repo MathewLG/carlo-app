@@ -31,6 +31,7 @@ export const authOptions = {
       if (sessionUser) {
         session.user.id = sessionUser._id.toString();
         session.user.username = sessionUser.username;
+        session.user.displayName = sessionUser.displayName ?? '';
         session.user.role = sessionUser.role;
         // The pages use this to send people who are not on the list to /unirse;
         // the API checks the list again on every request.

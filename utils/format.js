@@ -9,6 +9,12 @@ export const memoryDate = (memory) => {
   return new Date(parseInt(String(memory._id).substring(0, 8), 16) * 1000);
 };
 
+export const MAX_DISPLAY_NAME_LENGTH = 40;
+
+// The name shown for an author: the one they chose, else their username. A
+// memory can outlive its author's account, so the person may be missing.
+export const authorName = (person) => person?.displayName || person?.username || 'Familia';
+
 export const formatDate = (date) =>
   new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long', year: 'numeric', timeZone: TIME_ZONE }).format(
     date,

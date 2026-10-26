@@ -12,7 +12,7 @@ const db = async () => {
 
 export const resetDatabase = async () => {
   const conn = await db();
-  await Promise.all(['users', 'memories', 'invites', 'settings', 'events'].map((name) => conn.collection(name).deleteMany({})));
+  await Promise.all(['users', 'memories', 'invites', 'settings', 'events', 'words'].map((name) => conn.collection(name).deleteMany({})));
 };
 
 export const closeDatabase = async () => {
@@ -90,3 +90,10 @@ export const seedSettings = async (settings) => {
 };
 
 export const day = (value) => new Date(`${value}T12:00:00Z`);
+
+// A Diccionario entry; saidAt is a 'YYYY-MM-DD' day.
+export const seedWord = async (creator, { saidAt = '2024-02-01', ...overrides } = {}) => {
+  const word = { _id: new mongoose.Types.ObjectId(), creator: creator._id, word: 'awa', meaning: 'agua', saidAt: day(saidAt), firstWord: false, ...overrides };
+  await (await db()).collection('words').insertOne(word);
+  return word;
+};
