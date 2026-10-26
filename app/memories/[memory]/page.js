@@ -7,6 +7,8 @@ import Avatar from '@components/Avatar';
 import { memoryDate, formatDate } from '@utils/format';
 import { ageAt } from '@utils/age';
 import useCarloBirthDate from '@components/useCarloBirthDate';
+import InstantPhoto from '@components/media/InstantPhoto';
+import VoiceNote from '@components/media/VoiceNote';
 
 export default function SingleMemory() {
   const { memory: id } = useParams();
@@ -101,7 +103,13 @@ export default function SingleMemory() {
             )}
           </div>
         </header>
+        {memory.photo && <InstantPhoto photo={memory.photo} className="mx-auto mt-6 max-w-md" />}
         <p className="mt-6 whitespace-pre-line text-lg leading-relaxed">{memory.memory}</p>
+        {memory.voice && (
+          <div className="mt-6">
+            <VoiceNote voice={memory.voice} />
+          </div>
+        )}
         <p className="mt-6">
           <span className="tag-chip">{memory.tag}</span>
         </p>

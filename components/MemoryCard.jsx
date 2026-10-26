@@ -2,6 +2,8 @@ import Link from 'next/link';
 import Avatar from './Avatar';
 import { memoryDate, formatDate } from '@utils/format';
 import { ageAt } from '@utils/age';
+import InstantPhoto from './media/InstantPhoto';
+import VoiceNote from './media/VoiceNote';
 
 const PREVIEW_LENGTH = 280;
 
@@ -27,7 +29,15 @@ const MemoryCard = ({ memory, onTagClick, birthDate = null }) => {
         </div>
       </header>
 
+      {memory.photo && <InstantPhoto photo={memory.photo} className="mt-4" />}
+
       <p className="mt-4 whitespace-pre-line text-base leading-relaxed">{text}</p>
+
+      {memory.voice && (
+        <div className="mt-4">
+          <VoiceNote voice={memory.voice} />
+        </div>
+      )}
 
       <footer className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <button

@@ -1,3 +1,6 @@
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { getServerSession } from 'next-auth';
@@ -10,10 +13,15 @@ export const startDatabase = async () => {
   const server = await MongoMemoryServer.create();
   process.env.MONGODB_URI = server.getUri();
   process.env.MONGODB_DB = 'carlo_app_test';
+  // Photos and voice notes go to a throwaway folder, never to Vercel Blob.
+  delete process.env.BLOB_READ_WRITE_TOKEN;
+  const mediaDir = await mkdtemp(path.join(tmpdir(), 'carlo-media-'));
+  process.env.MEDIA_DIR = mediaDir;
   await connectToDB();
   return async () => {
     await mongoose.disconnect();
     await server.stop();
+    await rm(mediaDir, { recursive: true, force: true });
   };
 };
 
@@ -40,3 +48,11 @@ export const request = (path, { method = 'GET', body } = {}) =>
 
 // Next 16 passes dynamic route params as a promise.
 export const routeParams = (params) => ({ params: Promise.resolve(params) });
+
+// A multipart upload like the browser sends: { file: { bytes, name, type }, …other fields }.
+export const uploadRequest = (urlPath, { file, ...fields } = {}, method = 'POST') => {
+  const form = new FormData();
+  if (file) form.append('file', new Blob([file.bytes], { type: file.type ?? 'application/octet-stream' }), file.name ?? 'archivo');
+  for (const [key, value] of Object.entries(fields)) form.append(key, String(value));
+  return new Request(`http://localhost${urlPath}`, { method, body: form });
+};

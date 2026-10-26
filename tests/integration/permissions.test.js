@@ -6,11 +6,16 @@ import { POST as join } from '@/app/api/join/route';
 import { DELETE as removeFamily, GET as listFamily, POST as addFamily } from '@/app/api/admin/family/route';
 import { PUT as setCode } from '@/app/api/admin/join-code/route';
 import { GET as getSettings, PATCH as updateSettings } from '@/app/api/settings/route';
+import { POST as uploadPhoto } from '@/app/api/memory/[id]/photo/route';
+import { GET as getMedia } from '@/app/api/media/[id]/[kind]/route';
+import { GET as getBackup } from '@/app/api/admin/backup/route';
+import { saveFile } from '@utils/services/storage';
+import { FILES } from '../fixtures/files';
 import { hashCode } from '@utils/joinCode';
 import Settings from '@models/settings';
 import { PERMISSIONS, ROLES } from '../fixtures/permissions';
 import { makeAdmin, makeMemory, makeUser } from '../fixtures/people';
-import { clearDatabase, request, routeParams, signInAs, signOut, startDatabase } from './setup';
+import { clearDatabase, request, routeParams, signInAs, signOut, startDatabase, uploadRequest } from './setup';
 
 vi.mock('next-auth', async (importOriginal) => ({ ...(await importOriginal()), getServerSession: vi.fn() }));
 
@@ -37,6 +42,10 @@ const ACTIONS = {
   "see Carlo's birth date": () => getSettings(),
   "change Carlo's birth date": () =>
     updateSettings(request('/api/settings', { method: 'PATCH', body: { carloBirthDate: '2023-05-15' } })),
+  'add a photo to a memory': ({ id }) =>
+    uploadPhoto(uploadRequest(`/api/memory/${id}/photo`, { file: FILES.jpeg }), routeParams({ id })),
+  'see a photo': ({ id }) => getMedia(request(`/api/media/${id}/photo`), routeParams({ id, kind: 'photo' })),
+  'download the backup': () => getBackup(),
 };
 
 let stopDatabase;
@@ -53,7 +62,11 @@ beforeEach(async () => {
 describe.each(PERMISSIONS)('$action', (row) => {
   it.each(ROLES)('%s gets the status the table expects', async (role) => {
     const author = await makeUser();
+    // The memory already has a photo, stored where the app would put it.
     const memory = await makeMemory(author);
+    memory.photo = { path: `media/${memory._id}/photo-0a0a0a.jpg`, mime: 'image/jpeg' };
+    await memory.save();
+    await saveFile(memory.photo.path, FILES.jpeg.bytes, 'image/jpeg');
     const other = await makeUser();
     if (role === 'visitante') signOut();
     if (role === 'pendiente') signInAs(await makeUser({ invited: false }));

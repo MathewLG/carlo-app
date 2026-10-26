@@ -21,4 +21,7 @@ export const PERMISSIONS = [
   { action: 'change the family code', visitante: 401, pendiente: 403, autor: 403, familiar: 403, admin: 200 },
   { action: "see Carlo's birth date", visitante: 401, pendiente: 403, autor: 200, familiar: 200, admin: 200 },
   { action: "change Carlo's birth date", visitante: 401, pendiente: 403, autor: 403, familiar: 403, admin: 200 },
+  { action: 'add a photo to a memory', visitante: 401, pendiente: 403, autor: 201, familiar: 403, admin: 201 },
+  { action: 'see a photo', visitante: 401, pendiente: 403, autor: 200, familiar: 200, admin: 200 },
+  { action: 'download the backup', visitante: 401, pendiente: 403, autor: 403, familiar: 403, admin: 200 },
 ];

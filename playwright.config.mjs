@@ -27,7 +27,16 @@ export default defineConfig({
       : undefined,
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'], ...desktop }, testIgnore: /phone\.spec/ },
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        ...desktop,
+        // A fake microphone, so the voice recorder can be tested.
+        launchOptions: { args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] },
+      },
+      testIgnore: /phone\.spec/,
+    },
     { name: 'firefox', use: { ...devices['Desktop Firefox'], ...desktop }, testIgnore: /phone\.spec/ },
     { name: 'webkit', use: { ...devices['Desktop Safari'], ...desktop }, testIgnore: /phone\.spec/ },
     { name: 'phone', use: { ...devices['iPhone 13'] }, testMatch: /(phone|signed-out)\.spec/ },

@@ -10,6 +10,8 @@ module.exports = {
       fontFamily: {
         display: ['var(--font-display)', 'ui-rounded', 'system-ui', 'sans-serif'],
         body: ['var(--font-body)', 'ui-rounded', 'system-ui', 'sans-serif'],
+        // Photo captions only, written like a pen on an instant print.
+        hand: ['var(--font-hand)', 'cursive'],
       },
       colors: {
         'carlo-blue': '#004AAD',

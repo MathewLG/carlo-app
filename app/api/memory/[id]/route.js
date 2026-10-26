@@ -2,6 +2,7 @@ import { isValidObjectId } from 'mongoose';
 import { connectToDB } from '@utils/database';
 import { canEdit, requireUser } from '@utils/access';
 import { parseMemoryInput } from '@utils/validate';
+import { deleteFiles } from '@utils/services/storage';
 import Memory from '@models/memory';
 
 export const dynamic = 'force-dynamic';
@@ -68,6 +69,8 @@ export const DELETE = async (_request, { params }) => {
       return Response.json({ error: 'Solo quien escribió este recuerdo puede borrarlo' }, { status: 403 });
     }
     await Memory.deleteOne({ _id: memory._id });
+    // The files go with the memory, so nothing is left behind in storage.
+    await deleteFiles([memory.photo?.path, memory.voice?.path]);
     return new Response(null, { status: 204 });
   } catch (error) {
     console.error('DELETE /api/memory/[id] failed', error);

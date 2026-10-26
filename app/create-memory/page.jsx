@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
 import Form from '@components/Form';
+import { emptyMedia, saveMedia } from '@components/media/prepareMedia';
 
 const CreateMemory = () => {
   const router = useRouter();
@@ -11,6 +12,7 @@ const CreateMemory = () => {
   const [submitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [post, setPost] = useState({ memory: '', tag: '', happenedAt: '' });
+  const [media, setMedia] = useState(emptyMedia);
 
   const createMemory = async (e) => {
     e.preventDefault();
@@ -25,6 +27,14 @@ const CreateMemory = () => {
       });
 
       if (response.ok) {
+        const memory = await response.json();
+        try {
+          await saveMedia(memory._id, media);
+        } catch (mediaError) {
+          // The words are saved; send them to the edit page to try the file again.
+          router.push(`/memories/${memory._id}/edit?aviso=${encodeURIComponent(mediaError.message)}`);
+          return;
+        }
         router.push('/');
         router.refresh();
         return;
@@ -54,6 +64,8 @@ const CreateMemory = () => {
       cancelHref="/"
       post={post}
       setPost={setPost}
+      media={media}
+      setMedia={setMedia}
       submitting={submitting}
       handleSubmit={createMemory}
       error={error}
