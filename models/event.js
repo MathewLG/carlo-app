@@ -15,14 +15,22 @@ const EventSchema = new Schema({
       ref: 'Memory',
     },
   ],
+  // A first word from the Diccionario (source 'palabra'). Such an event has
+  // no memories and is rebuilt from the dictionary, never edited here.
+  wordIds: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'Word',
+    },
+  ],
   // 'YYYY-MM-DD' days of the first and last memory, for ordering.
   startDay: String,
   endDay: String,
   // claude: named in a Claude Code session (scripts/timeline.mjs) · mes: grouped by
-  // month until then · hito: a first time
+  // month until then · hito: a first time · palabra: a first word
   source: {
     type: String,
-    enum: ['claude', 'mes', 'hito', 'admin'],
+    enum: ['claude', 'mes', 'hito', 'palabra', 'admin'],
     required: true,
   },
   locked: {

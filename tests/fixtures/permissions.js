@@ -27,4 +27,10 @@ export const PERMISSIONS = [
   { action: 'see the timeline', visitante: 401, pendiente: 403, autor: 200, familiar: 200, admin: 200 },
   { action: 'rename a moment', visitante: 401, pendiente: 403, autor: 403, familiar: 403, admin: 200 },
   { action: 'reorganize the timeline', visitante: 401, pendiente: 403, autor: 403, familiar: 403, admin: 200 },
+  { action: 'see the family pages', visitante: 401, pendiente: 403, autor: 200, familiar: 200, admin: 200 },
+  { action: 'change my name', visitante: 401, pendiente: 403, autor: 200, familiar: 200, admin: 200 },
+  { action: 'read the dictionary', visitante: 401, pendiente: 403, autor: 200, familiar: 200, admin: 200 },
+  { action: 'add a word', visitante: 401, pendiente: 403, autor: 201, familiar: 201, admin: 201 },
+  { action: 'edit a word', visitante: 401, pendiente: 403, autor: 200, familiar: 403, admin: 200 },
+  { action: 'delete a word', visitante: 401, pendiente: 403, autor: 204, familiar: 403, admin: 204 },
 ];

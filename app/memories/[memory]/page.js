@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Avatar from '@components/Avatar';
-import { memoryDate, formatDate } from '@utils/format';
+import { authorName, memoryDate, formatDate } from '@utils/format';
+import AuthorLink from '@components/AuthorLink';
 import { ageAt } from '@utils/age';
 import useCarloBirthDate from '@components/useCarloBirthDate';
 import InstantPhoto from '@components/media/InstantPhoto';
@@ -83,7 +84,7 @@ export default function SingleMemory() {
     );
   }
 
-  const author = memory.creator?.username ?? 'Familia';
+  const author = authorName(memory.creator);
   // Same rule as the API: the author or the admin can change a memory.
   const isOwner = memory.creator?._id && memory.creator._id === session?.user?.id;
   const canChange = isOwner || session?.user?.role === 'admin';
@@ -94,9 +95,13 @@ export default function SingleMemory() {
 
       <div className="sticker mt-6">
         <header className="flex items-center gap-3">
-          <Avatar image={memory.creator?.image} name={author} size={48} />
+          <AuthorLink person={memory.creator} className="shrink-0" tabIndex={-1} aria-hidden="true">
+            <Avatar image={memory.creator?.image} name={author} size={48} />
+          </AuthorLink>
           <div>
-            <p className="font-display text-lg font-semibold leading-tight">{author}</p>
+            <p className="font-display text-lg font-semibold leading-tight">
+              <AuthorLink person={memory.creator} className="hover:underline">{author}</AuthorLink>
+            </p>
             <p className="text-ink-soft">{formatDate(memoryDate(memory))}</p>
             {ageAt(birthDate, memoryDate(memory)) && (
               <p className="text-ink-soft">{ageAt(birthDate, memoryDate(memory))}</p>

@@ -31,20 +31,21 @@ const settingsDb = conn.collection('settings');
 const eventsDb = conn.collection('events');
 
 const load = async () => {
-  const [memories, events, settings] = await Promise.all([
+  const [memories, events, settings, firstWords] = await Promise.all([
     conn.collection('memories').find({}, { projection: { memory: 1, tag: 1, happenedAt: 1, createdAt: 1, milestone: 1 } }).toArray(),
     eventsDb.find({ $or: [{ locked: true }, { source: 'claude' }] }).toArray(),
     settingsDb.findOne({ key: 'app' }),
+    conn.collection('words').find({ firstWord: true }, { projection: { word: 1, saidAt: 1 } }).toArray(),
   ]);
-  return { memories, events, birthDate: settings?.carloBirthDate ?? null };
+  return { memories, events, firstWords, birthDate: settings?.carloBirthDate ?? null };
 };
 
 // The groups checked against the memories and events as they are now.
-const plan = ({ memories, events, birthDate }, groups) => {
+const plan = ({ memories, events, firstWords, birthDate }, groups) => {
   const invalid = checkGroups(groups, memories.map((m) => m._id));
   const result = invalid ? { error: invalid } : withSessionGroups(events, groups);
   if (result.error) throw new Error(result.error);
-  return planTimeline({ memories, keptEvents: result.keptEvents, birthDate });
+  return planTimeline({ memories, keptEvents: result.keptEvents, birthDate, firstWords });
 };
 
 try {
@@ -78,6 +79,7 @@ try {
         const events = plan(await load(), groups).map((e) => ({
           ...e,
           memoryIds: e.memoryIds.map((id) => new mongoose.Types.ObjectId(id)),
+          wordIds: (e.wordIds ?? []).map((id) => new mongoose.Types.ObjectId(id)),
         }));
         const { insertedIds } = await eventsDb.insertMany(events);
         await eventsDb.deleteMany({ _id: { $nin: Object.values(insertedIds) } });

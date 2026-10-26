@@ -58,7 +58,7 @@ test('the admin sees the family, adds someone waiting and removes someone', asyn
   await signIn(context, admin);
 
   await page.goto('/');
-  await page.getByRole('link', { name: 'Familia' }).click();
+  await page.getByRole('link', { name: 'Admin' }).click();
   await expect(page.getByRole('heading', { name: 'En la familia (2)' })).toBeVisible();
   await expect(page.getByText('abuelarosa')).toBeVisible();
   await expectAccessible(page);
@@ -97,5 +97,5 @@ test('a family member cannot open the admin page', async ({ page, context }) => 
   await signIn(context, await seedUser());
   await page.goto('/admin/familia');
   await expect(page.getByText('Solo el administrador puede ver esta página.')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Familia' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Admin' })).toHaveCount(0);
 });

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Avatar from './Avatar';
-import { memoryDate, formatDate } from '@utils/format';
+import AuthorLink from './AuthorLink';
+import { authorName, memoryDate, formatDate } from '@utils/format';
 import { ageAt } from '@utils/age';
 import InstantPhoto from './media/InstantPhoto';
 import VoiceNote from './media/VoiceNote';
@@ -10,7 +11,7 @@ const PREVIEW_LENGTH = 280;
 // birthDate: Carlo's, to show his age on the day; null hides it.
 const MemoryCard = ({ memory, onTagClick, birthDate = null }) => {
   // A memory can outlive its author's account, so creator may be missing.
-  const author = memory.creator?.username ?? 'Familia';
+  const author = authorName(memory.creator);
   const isLong = memory.memory.length > PREVIEW_LENGTH;
   const date = memoryDate(memory);
   const age = ageAt(birthDate, date);
@@ -19,9 +20,13 @@ const MemoryCard = ({ memory, onTagClick, birthDate = null }) => {
   return (
     <article className="sticker">
       <header className="flex items-center gap-3">
-        <Avatar image={memory.creator?.image} name={author} />
+        <AuthorLink person={memory.creator} className="shrink-0" tabIndex={-1} aria-hidden="true">
+          <Avatar image={memory.creator?.image} name={author} />
+        </AuthorLink>
         <div>
-          <p className="font-display font-semibold leading-tight">{author}</p>
+          <p className="font-display font-semibold leading-tight">
+            <AuthorLink person={memory.creator} className="hover:underline">{author}</AuthorLink>
+          </p>
           <p className="text-sm text-ink-soft">
             {formatDate(date)}
             {age && <> · {age}</>}

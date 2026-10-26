@@ -27,6 +27,18 @@ ${voice}
     })
     .join('\n');
 
+  const words = backup.words ?? [];
+  const entries = words
+    .map((w) => {
+      const day = parseDay(w.day);
+      const age = ageAt(backup.carloBirthDate && parseDay(backup.carloBirthDate), day);
+      const meta = [formatDate(day), age, w.heardBy && `Lo escuchó: ${w.heardBy}`, w.firstWord && 'Primera palabra', w.author];
+      return `<dt>«${escapeHtml(w.word)}»</dt>
+<dd>${escapeHtml(w.meaning)}<br><span class="meta">${escapeHtml(meta.filter(Boolean).join(' · '))}</span></dd>`;
+    })
+    .join('\n');
+  const dictionary = words.length ? `<h2>Diccionario de Carlo</h2>\n<dl>\n${entries}\n</dl>` : '';
+
   return `<!doctype html>
 <html lang="es">
 <head>
@@ -41,12 +53,15 @@ article { background: #fff; border: 2px solid #14274A; border-radius: 1rem; padd
 img { max-width: 100%; display: block; }
 figure { margin: 1rem 0; }
 audio { width: 100%; }
+dt { font-weight: 700; font-size: 1.2rem; margin-top: 1rem; }
+dd { margin: .25rem 0 0; }
 </style>
 </head>
 <body>
 <h1>Recuerdos para Carlo</h1>
 <p>${backup.memories.length} recuerdos, respaldados el ${escapeHtml(formatDate(new Date(backup.exportedAt)))}.</p>
 ${items}
+${dictionary}
 </body>
 </html>
 `;

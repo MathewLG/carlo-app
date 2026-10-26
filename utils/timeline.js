@@ -83,12 +83,16 @@ const span = (memoryIds, dayById) => {
   return { startDay: days[0], endDay: days.at(-1) };
 };
 
+// A first word's moment, speaking to Carlo.
+export const firstWordTitle = (word) => `Dijiste «${word}»`;
+
 // The whole timeline, in order. Kept events (the admin's edits and moments
 // named in a session) stay as they are, minus memories that no longer
 // exist; every milestone memory not in one becomes its own event; the rest
-// are grouped by month until the next session names them.
-// Returns [{ title, memoryIds, startDay, endDay, source, locked }].
-export const planTimeline = ({ memories, keptEvents = [], birthDate = null }) => {
+// are grouped by month until the next session names them. Each first word
+// from the dictionary is a moment of its own.
+// Returns [{ title, memoryIds, wordIds?, startDay, endDay, source, locked }].
+export const planTimeline = ({ memories, keptEvents = [], birthDate = null, firstWords = [] }) => {
   const items = timelineItems(memories, birthDate);
   const dayById = new Map(items.map((i) => [i.id, i.day]));
   const events = [];
@@ -111,6 +115,11 @@ export const planTimeline = ({ memories, keptEvents = [], birthDate = null }) =>
 
   for (const g of groupByMonth(items.filter((i) => !placed.has(i.id)))) {
     events.push({ title: g.title, memoryIds: g.memoryIds, ...span(g.memoryIds, dayById), source: 'mes', locked: false });
+  }
+
+  for (const w of firstWords) {
+    const day = toDayString(new Date(w.saidAt));
+    events.push({ title: firstWordTitle(w.word), memoryIds: [], wordIds: [String(w._id)], startDay: day, endDay: day, source: 'palabra', locked: false });
   }
 
   return events.sort((a, b) => a.startDay.localeCompare(b.startDay) || a.endDay.localeCompare(b.endDay));

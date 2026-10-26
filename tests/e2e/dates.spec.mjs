@@ -13,7 +13,7 @@ test('the admin sets the birth date and every memory shows Carlo’s age', async
   await expect(page.getByText('Tu primera Navidad')).toBeVisible();
   await expect(page.getByText('Carlo tenía')).toHaveCount(0);
 
-  await page.getByRole('link', { name: 'Familia' }).click();
+  await page.getByRole('link', { name: 'Admin' }).click();
   await page.getByRole('navigation', { name: 'Administración' }).getByRole('link', { name: 'Carlo' }).click();
   await expect(page.getByText('Todavía no está guardada')).toBeVisible();
   await expectAccessible(page);

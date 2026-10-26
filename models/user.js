@@ -17,6 +17,12 @@ const UserSchema = new Schema({
   image: {
     type: String,
   },
+  // "Mi nombre en Carlo App": shown instead of username when set.
+  displayName: {
+    type: String,
+    trim: true,
+    maxlength: 40,
+  },
   // Only scripts/make-admin.mjs sets 'admin'; no screen can grant it.
   role: {
     type: String,
@@ -29,6 +35,9 @@ const UserSchema = new Schema({
     windowStart: Date,
   },
 });
+
+// What anyone in the family may see of an author. Emails stay on the server.
+export const PUBLIC_FIELDS = 'username displayName image';
 
 const User = models.User || model('User', UserSchema);
 

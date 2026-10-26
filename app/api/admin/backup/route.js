@@ -1,15 +1,18 @@
 import { connectToDB } from '@utils/database';
 import { requireUser } from '@utils/access';
 import { extensionFor } from '@utils/media';
-import { memoryDate } from '@utils/format';
+import { authorName, memoryDate } from '@utils/format';
 import { toDayString } from '@utils/dates';
 import Memory, { publicMedia } from '@models/memory';
 import { getSettings } from '@models/settings';
+import Word from '@models/word';
+import { sortWords } from '@utils/words';
 
 export const dynamic = 'force-dynamic';
 
 // Everything the admin's browser needs to build the backup zip: every memory
-// in the order it happened, and where to fetch each file through the app.
+// in the order it happened, where to fetch each file through the app, and
+// the Diccionario A to Z.
 // Files are fetched one by one, since a zip of them all would not fit in one
 // Vercel response.
 export const GET = async () => {
@@ -17,9 +20,10 @@ export const GET = async () => {
   if (response) return response;
 
   await connectToDB();
-  const [memories, settings] = await Promise.all([
-    Memory.find().populate('creator', 'username').lean(),
+  const [memories, settings, words] = await Promise.all([
+    Memory.find().populate('creator', 'username displayName').lean(),
     getSettings(),
+    Word.find().populate('creator', 'username displayName').lean(),
   ]);
 
   const entries = memories
@@ -33,7 +37,7 @@ export const GET = async () => {
         };
       return {
         id: String(memory._id),
-        author: memory.creator?.username ?? 'Familia',
+        author: authorName(memory.creator),
         day: toDayString(date),
         writtenAt: memory.createdAt ?? null,
         tag: memory.tag,
@@ -48,5 +52,13 @@ export const GET = async () => {
     exportedAt: new Date().toISOString(),
     carloBirthDate: settings.carloBirthDate ? toDayString(settings.carloBirthDate) : null,
     memories: entries,
+    words: sortWords(words).map((w) => ({
+      word: w.word,
+      meaning: w.meaning,
+      day: toDayString(w.saidAt),
+      heardBy: w.heardBy ?? '',
+      firstWord: Boolean(w.firstWord),
+      author: authorName(w.creator),
+    })),
   });
 };

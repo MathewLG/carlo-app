@@ -5,6 +5,7 @@ import { parseMemoryInput } from '@utils/validate';
 import { deleteFiles } from '@utils/services/storage';
 import { timelineChanged } from '@utils/timelineBuild';
 import Memory from '@models/memory';
+import { PUBLIC_FIELDS } from '@models/user';
 
 // The timeline rebuild runs after the response, inside this function.
 export const maxDuration = 60;
@@ -20,7 +21,7 @@ const loadMemory = async (id) => {
   if (!isValidObjectId(id)) return { response: notFound() };
 
   await connectToDB();
-  const memory = await Memory.findById(id).populate('creator', 'username image');
+  const memory = await Memory.findById(id).populate('creator', PUBLIC_FIELDS);
   if (!memory) return { response: notFound() };
   return { user, memory };
 };

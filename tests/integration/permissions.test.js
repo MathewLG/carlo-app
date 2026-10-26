@@ -12,7 +12,13 @@ import { GET as getBackup } from '@/app/api/admin/backup/route';
 import { GET as getTimeline } from '@/app/api/timeline/route';
 import { POST as reorganize } from '@/app/api/timeline/rebuild/route';
 import { PATCH as editEvent } from '@/app/api/timeline/events/[id]/route';
+import { GET as listPeople } from '@/app/api/family/route';
+import { GET as getPerson } from '@/app/api/family/[id]/route';
+import { PATCH as changeName } from '@/app/api/profile/route';
+import { GET as listWords, POST as addWord } from '@/app/api/words/route';
+import { DELETE as deleteWord, PATCH as editWord } from '@/app/api/words/[id]/route';
 import Event from '@models/event';
+import Word from '@models/word';
 import { saveFile } from '@utils/services/storage';
 import { FILES } from '../fixtures/files';
 import { hashCode } from '@utils/joinCode';
@@ -26,7 +32,7 @@ vi.mock('next-auth', async (importOriginal) => ({ ...(await importOriginal()), g
 const FAMILY_CODE = 'tres palabras azules';
 
 // How each action in the permission table is performed. `ctx` holds the
-// memory being acted on and another family member to remove.
+// memory and dictionary word being acted on, and another family member to remove.
 const ACTIONS = {
   'list memories': () => listMemories(request('/api/memory')),
   'read a memory': ({ id }) => getMemory(request(`/api/memory/${id}`), routeParams({ id })),
@@ -54,7 +60,20 @@ const ACTIONS = {
   'rename a moment': ({ event }) =>
     editEvent(request(`/api/timeline/events/${event._id}`, { method: 'PATCH', body: { title: 'Nuevo nombre' } }), routeParams({ id: String(event._id) })),
   'reorganize the timeline': () => reorganize(),
+  'see the family pages': async ({ other }) => {
+    const index = await listPeople();
+    if (index.status !== 200) return index;
+    return getPerson(request(`/api/family/${other._id}`), routeParams({ id: String(other._id) }));
+  },
+  'change my name': () => changeName(request('/api/profile', { method: 'PATCH', body: { displayName: 'Abuela Rosa' } })),
+  'read the dictionary': () => listWords(),
+  'add a word': () => addWord(request('/api/words', { method: 'POST', body: WORD })),
+  'edit a word': ({ word }) =>
+    editWord(request(`/api/words/${word._id}`, { method: 'PATCH', body: { ...WORD, meaning: 'agüita' } }), routeParams({ id: String(word._id) })),
+  'delete a word': ({ word }) => deleteWord(request(`/api/words/${word._id}`, { method: 'DELETE' }), routeParams({ id: String(word._id) })),
 };
+
+const WORD = { word: 'awa', meaning: 'agua', saidAt: '2024-05-15' };
 
 let stopDatabase;
 beforeAll(async () => {
@@ -76,6 +95,7 @@ describe.each(PERMISSIONS)('$action', (row) => {
     await memory.save();
     await saveFile(memory.photo.path, FILES.jpeg.bytes, 'image/jpeg');
     const other = await makeUser();
+    const word = await Word.create({ ...WORD, saidAt: new Date('2024-05-15T12:00:00Z'), creator: author._id });
     const event = await Event.create({ title: 'Mayo', memoryIds: [memory._id], startDay: '2024-05-01', endDay: '2024-05-01', source: 'mes' });
     if (role === 'visitante') signOut();
     if (role === 'pendiente') signInAs(await makeUser({ invited: false }));
@@ -83,7 +103,7 @@ describe.each(PERMISSIONS)('$action', (row) => {
     if (role === 'familiar') signInAs(await makeUser());
     if (role === 'admin') signInAs(await makeAdmin());
 
-    const response = await ACTIONS[row.action]({ id: memory._id.toString(), other, event });
+    const response = await ACTIONS[row.action]({ id: memory._id.toString(), other, event, word });
 
     expect(response.status).toBe(row[role]);
   });

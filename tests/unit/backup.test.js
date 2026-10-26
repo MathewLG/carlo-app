@@ -42,6 +42,21 @@ describe('buildBackupHtml', () => {
     expect(tricky).not.toContain('<img onerror');
   });
 
+  it('adds the Diccionario after the memories, escaped like everything else', () => {
+    const withWords = buildBackupHtml({
+      ...backup,
+      words: [
+        { word: 'awa', meaning: 'agua', day: '2024-02-01', heardBy: 'Mamá', firstWord: true, author: 'abuelarosa' },
+        { word: '<b>', meaning: 'x', day: '2024-03-01', heardBy: '', firstWord: false, author: 'tio' },
+      ],
+    });
+    expect(withWords).toContain('<h2>Diccionario de Carlo</h2>');
+    expect(withWords).toContain('<dt>«awa»</dt>');
+    expect(withWords).toContain('1 de febrero de 2024 · Carlo tenía 8 meses · Lo escuchó: Mamá · Primera palabra · abuelarosa');
+    expect(withWords).toContain('<dt>«&lt;b&gt;»</dt>');
+    expect(html).not.toContain('Diccionario');
+  });
+
   it('leaves out ages when no birth date was set', () => {
     expect(buildBackupHtml({ ...backup, carloBirthDate: null })).not.toContain('Carlo tenía');
   });

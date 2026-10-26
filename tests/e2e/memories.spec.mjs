@@ -103,3 +103,20 @@ test('tablets get the menu button, since the full set of links would wrap', asyn
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 });
+
+test('from 1024 px every link fits on one line, the admin’s too', async ({ page, context }) => {
+  await signIn(context, await seedUser({ role: 'admin', displayName: 'Mathew' }));
+  await page.setViewportSize({ width: 1024, height: 800 });
+  await page.goto('/');
+  const nav = page.getByRole('navigation').first();
+  const names = ['Línea del tiempo', 'Familia', 'Diccionario', 'Mis recuerdos', 'Admin', 'Escribir un recuerdo'];
+  const tops = [];
+  for (const name of names) {
+    const box = await nav.getByRole('link', { name, exact: true }).boundingBox();
+    expect(box, name).not.toBeNull();
+    tops.push(Math.round(box.y + box.height / 2));
+  }
+  expect(Math.max(...tops) - Math.min(...tops)).toBeLessThanOrEqual(4);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+});
