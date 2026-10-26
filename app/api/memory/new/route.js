@@ -1,7 +1,11 @@
 import { connectToDB } from '@utils/database';
 import { requireUser } from '@utils/access';
 import { parseMemoryInput } from '@utils/validate';
+import { timelineChanged } from '@utils/timelineBuild';
 import Memory from '@models/memory';
+
+// The timeline rebuild runs after the response, inside this function.
+export const maxDuration = 60;
 
 export const POST = async (req) => {
   // The creator always comes from the session, never from the request body,
@@ -28,7 +32,9 @@ export const POST = async (req) => {
       memory: input.memory,
       tag: input.tag,
       happenedAt: input.happenedAt ?? undefined,
+      milestone: input.milestone || undefined,
     });
+    await timelineChanged();
     return Response.json(newMemory, { status: 201 });
   } catch (error) {
     console.error('POST /api/memory/new failed', error);

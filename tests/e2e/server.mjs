@@ -23,6 +23,8 @@ const env = {
   GOOGLE_CLIENT_SECRET: 'e2e-google-secret',
   // Photos and voice notes go to a throwaway folder, never to Vercel Blob.
   BLOB_READ_WRITE_TOKEN: '',
+  // The timeline groups by month instead of calling Claude.
+  ANTHROPIC_API_KEY: '',
   MEDIA_DIR: mkdtempSync(path.join(tmpdir(), 'carlo-e2e-media-')),
 };
 

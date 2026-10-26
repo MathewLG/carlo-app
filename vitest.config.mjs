@@ -15,6 +15,7 @@ export default defineConfig({
   test: {
     include: ['tests/unit/**/*.test.js', 'tests/integration/**/*.test.js'],
     environment: 'node',
+    setupFiles: ['tests/setup.js'],
     // Each integration file starts its own in-memory MongoDB; the first run downloads it.
     hookTimeout: 120_000,
     coverage: {

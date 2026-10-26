@@ -3,7 +3,11 @@ import { connectToDB } from '@utils/database';
 import { canEdit, requireUser } from '@utils/access';
 import { parseMemoryInput } from '@utils/validate';
 import { deleteFiles } from '@utils/services/storage';
+import { timelineChanged } from '@utils/timelineBuild';
 import Memory from '@models/memory';
+
+// The timeline rebuild runs after the response, inside this function.
+export const maxDuration = 60;
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +57,9 @@ export const PATCH = async (request, { params }) => {
     memory.memory = input.memory;
     memory.tag = input.tag;
     memory.happenedAt = input.happenedAt ?? undefined;
+    memory.milestone = input.milestone || undefined;
     await memory.save();
+    await timelineChanged();
     return Response.json(memory, { status: 200 });
   } catch (error) {
     console.error('PATCH /api/memory/[id] failed', error);
@@ -71,6 +77,7 @@ export const DELETE = async (_request, { params }) => {
     await Memory.deleteOne({ _id: memory._id });
     // The files go with the memory, so nothing is left behind in storage.
     await deleteFiles([memory.photo?.path, memory.voice?.path]);
+    await timelineChanged();
     return new Response(null, { status: 204 });
   } catch (error) {
     console.error('DELETE /api/memory/[id] failed', error);

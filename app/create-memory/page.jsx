@@ -11,7 +11,7 @@ const CreateMemory = () => {
   const { status } = useSession();
   const [submitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [post, setPost] = useState({ memory: '', tag: '', happenedAt: '' });
+  const [post, setPost] = useState({ memory: '', tag: '', happenedAt: '', milestone: '' });
   const [media, setMedia] = useState(emptyMedia);
 
   const createMemory = async (e) => {

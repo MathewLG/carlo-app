@@ -42,6 +42,11 @@ const MemorySchema = new Schema(
     happenedAt: {
       type: Date,
     },
+    // A first time ("Primera palabra", or the family's own words). Empty for
+    // ordinary memories. See utils/milestones.js.
+    milestone: {
+      type: String,
+    },
     photo: PhotoSchema,
     voice: VoiceSchema,
   },

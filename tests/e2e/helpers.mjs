@@ -12,7 +12,7 @@ const db = async () => {
 
 export const resetDatabase = async () => {
   const conn = await db();
-  await Promise.all(['users', 'memories', 'invites', 'settings'].map((name) => conn.collection(name).deleteMany({})));
+  await Promise.all(['users', 'memories', 'invites', 'settings', 'events'].map((name) => conn.collection(name).deleteMany({})));
 };
 
 export const closeDatabase = async () => {

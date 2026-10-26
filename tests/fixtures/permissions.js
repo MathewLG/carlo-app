@@ -24,4 +24,7 @@ export const PERMISSIONS = [
   { action: 'add a photo to a memory', visitante: 401, pendiente: 403, autor: 201, familiar: 403, admin: 201 },
   { action: 'see a photo', visitante: 401, pendiente: 403, autor: 200, familiar: 200, admin: 200 },
   { action: 'download the backup', visitante: 401, pendiente: 403, autor: 403, familiar: 403, admin: 200 },
+  { action: 'see the timeline', visitante: 401, pendiente: 403, autor: 200, familiar: 200, admin: 200 },
+  { action: 'rename a moment', visitante: 401, pendiente: 403, autor: 403, familiar: 403, admin: 200 },
+  { action: 'reorganize the timeline', visitante: 401, pendiente: 403, autor: 403, familiar: 403, admin: 200 },
 ];

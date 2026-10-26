@@ -41,10 +41,17 @@ const Nav = () => {
         <Image src="/assets/images/carlo-app-logo.png" alt="" width={44} height={44} priority />
       </Link>
 
-      {/* Desktop */}
-      <div className="hidden items-center gap-4 sm:flex">
+      {/* Wide screens; below 1024 px the links would wrap, so the menu is used. */}
+      <div className="hidden items-center gap-4 lg:flex">
         {user ? (
           <>
+            <Link
+              href="/linea-del-tiempo"
+              className="link"
+              aria-current={pathname === '/linea-del-tiempo' ? 'page' : undefined}
+            >
+              Línea del tiempo
+            </Link>
             {isAdmin && (
               <Link href="/admin/familia" className="link" aria-current={pathname === '/admin/familia' ? 'page' : undefined}>
                 Familia
@@ -66,8 +73,8 @@ const Nav = () => {
         )}
       </div>
 
-      {/* Mobile */}
-      <div className="relative sm:hidden" ref={menuRef}>
+      {/* Phones and tablets */}
+      <div className="relative lg:hidden" ref={menuRef}>
         {user ? (
           <>
             <button
@@ -87,6 +94,9 @@ const Nav = () => {
               >
                 <Link href="/create-memory" className="btn btn-sun">
                   Escribir un recuerdo
+                </Link>
+                <Link href="/linea-del-tiempo" className="btn btn-outline">
+                  Línea del tiempo
                 </Link>
                 <Link href="/profile" className="btn btn-outline">
                   Mis recuerdos
