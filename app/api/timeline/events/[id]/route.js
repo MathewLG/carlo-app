@@ -20,7 +20,7 @@ const refreshSpan = async (event) => {
 };
 
 // The admin's changes to an event. Every change locks the event (and the
-// other one involved), so Claude never regroups or renames it again.
+// other one involved), so no rebuild or session regroups or renames it again.
 //   { title }                      rename
 //   { mergeWith: eventId }         take in all of another event's memories
 //   { moveMemory, toEvent }        move one memory from this event to another

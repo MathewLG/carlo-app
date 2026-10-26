@@ -1,8 +1,9 @@
 import { Schema, model, models } from 'mongoose';
 
 // An event on the timeline: a named group of memories, such as "Tu primer
-// cumpleaños". Rebuilt from the memories after they change, except events
-// the admin edited (locked), which are never regrouped or renamed again.
+// cumpleaños". Rebuilt from the memories after they change. Events named in a
+// session and events the admin edited (locked) are kept; a session never
+// regroups or renames the admin's.
 const EventSchema = new Schema({
   title: {
     type: String,
@@ -17,7 +18,8 @@ const EventSchema = new Schema({
   // 'YYYY-MM-DD' days of the first and last memory, for ordering.
   startDay: String,
   endDay: String,
-  // claude: named by Claude · mes: grouped by month (no Claude) · hito: a first time
+  // claude: named in a Claude Code session (scripts/timeline.mjs) · mes: grouped by
+  // month until then · hito: a first time
   source: {
     type: String,
     enum: ['claude', 'mes', 'hito', 'admin'],
