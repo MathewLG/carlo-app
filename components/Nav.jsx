@@ -38,7 +38,7 @@ const Nav = () => {
   return (
     <nav className="flex items-center justify-between gap-4 py-5">
       <Link href="/" className="flex items-center gap-2" aria-label="Carlo App, inicio">
-        <Image src="/assets/images/carlo-app.png" alt="" width={44} height={44} priority />
+        <Image src="/assets/images/carlo-app-logo.png" alt="" width={44} height={44} priority />
       </Link>
 
       {/* Wide screens; below 1024 px the links would wrap, so the menu is used. */}

@@ -16,7 +16,7 @@ filled in by the agent to fit those answers; change any of them freely.
 
 ## Palette
 
-Core colors come from the existing logo (`public/assets/images/carlo-app.png`).
+Core colors come from the existing logo (`public/assets/images/carlo-app-logo.png`, transparent background).
 
 | Token | Hex | Use |
 |---|---|---|
