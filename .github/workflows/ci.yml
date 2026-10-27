@@ -16,10 +16,13 @@ permissions:
 env:
   NODE_VERSION: 24
 
+# Each job stops after 45 minutes instead of hanging; a slow package mirror
+# once stretched a 2-minute job to 28.
 jobs:
   lint:
     name: Lint and audit
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -34,6 +37,7 @@ jobs:
   test:
     name: Unit and integration tests
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -56,6 +60,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -77,18 +82,18 @@ jobs:
     name: Functional tests (${{ matrix.project }})
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # Playwright's own image comes with every browser and the system libraries
+    # they need, so nothing is installed per job (installing Firefox's from
+    # Ubuntu's mirrors took 8 minutes for 85 seconds of tests). Its version
+    # must match @playwright/test; tests/unit/ci.test.js checks that.
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --user 1001
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - project: chromium
-            browser: chromium
-          - project: firefox
-            browser: firefox
-          - project: webkit
-            browser: webkit
-          - project: phone
-            browser: webkit
+        project: [chromium, firefox, webkit, phone]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -104,7 +109,6 @@ jobs:
         with:
           name: next-build
           path: .next/
-      - run: npx playwright install --with-deps ${{ matrix.browser }}
       # A fresh secret per run: CI never sees a production secret.
       - run: echo "E2E_NEXTAUTH_SECRET=$(openssl rand -base64 32)" >> "$GITHUB_ENV"
       - run: npx playwright test --project=${{ matrix.project }}
@@ -121,6 +125,7 @@ jobs:
     if: always()
     needs: [lint, test, build, e2e]
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped')
         run: exit 1
