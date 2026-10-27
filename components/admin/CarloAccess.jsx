@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { forgetCarloBirthDate } from '@components/useCarloBirthDate';
 import { parseDay } from '@utils/dates';
 import { formatDate } from '@utils/format';
 import { MAX_ACCESS_AGE, MAX_WELCOME_LENGTH } from '@utils/carlo';
@@ -62,6 +63,8 @@ export default function CarloAccess() {
       if (!response.ok) throw new Error(data.error || 'No se pudo guardar.');
       setSaved(data);
       setForm({ ...data, carloAccessAge: String(data.carloAccessAge) });
+      // The welcome preview and the family banner read the settings again.
+      forgetCarloBirthDate();
       setMessage('Guardado.');
     } catch (err) {
       setError(err.message);

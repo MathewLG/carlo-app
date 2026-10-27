@@ -17,8 +17,9 @@ const Nav = () => {
   const user = session?.user;
   const isAdmin = user?.role === 'admin';
   const isCarlo = user?.role === 'carlo';
-  // Carlo's account reads: no "Mis recuerdos" and no writing.
-  const links = [
+  // Carlo's account reads: no "Mis recuerdos" and no writing. While it waits
+  // for its day there is nothing to go to.
+  const links = user?.carloWaiting ? [] : [
     { href: '/linea-del-tiempo', label: 'Línea del tiempo' },
     ...(isCarlo ? [{ href: '/', label: 'Recuerdos' }] : []),
     { href: '/familia', label: 'Familia' },

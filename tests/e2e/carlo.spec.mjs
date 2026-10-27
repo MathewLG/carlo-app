@@ -10,7 +10,10 @@ test("the admin sets up Carlo's access and his welcome", async ({ page, context 
   await seedSettings({ carloBirthDate: day('2023-05-15') });
   await signIn(context, await seedUser({ role: 'admin' }));
 
-  await page.goto('/admin/carlo');
+  // Arrive the way the admin does, so the settings are already loaded once.
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Admin' }).first().click();
+  await page.getByRole('navigation', { name: 'Administración' }).getByRole('link', { name: 'Carlo' }).click();
   const access = page.getByRole('region', { name: 'Acceso de Carlo' });
   await expect(access).toContainText('Todavía no guardas el correo de Carlo');
   await access.getByLabel('Correo de Google de Carlo').fill(CARLO);
@@ -38,6 +41,7 @@ test('before his day, Carlo signs in to a waiting page and nothing else', async 
   await expect(page.getByRole('heading', { name: 'Hola, Carlo' })).toBeVisible();
   await expect(page.getByText('Todavía no es tiempo.')).toBeVisible();
   await expect(page.getByText('Tu primera Navidad')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Línea del tiempo' })).toHaveCount(0);
   await page.goto('/unirse');
   await expect(page.getByLabel(/código/i)).toHaveCount(0);
   await expectAccessible(page);
