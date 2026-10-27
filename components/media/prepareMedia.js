@@ -119,7 +119,9 @@ const send = async (url, init) => {
   const response = await fetch(url, init);
   if (response.ok) return;
   const data = await response.json().catch(() => ({}));
-  throw new Error(data.error || 'No se pudo guardar el archivo.');
+  // Our own errors explain themselves; anything else (a crash, or a limit of
+  // the hosting before the app runs) at least says its HTTP status.
+  throw new Error(data.error || `No se pudo guardar el archivo (error ${response.status}).`);
 };
 
 // Sends the photo and voice changes for a saved memory. Throws with a

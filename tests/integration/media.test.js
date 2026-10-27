@@ -1,11 +1,12 @@
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DELETE as deletePhoto, PATCH as captionPhoto, POST as uploadPhoto } from '@/app/api/memory/[id]/photo/route';
 import { DELETE as deleteVoice, POST as uploadVoice } from '@/app/api/memory/[id]/voice/route';
 import { GET as getMedia } from '@/app/api/media/[id]/[kind]/route';
 import { DELETE as deleteMemory, GET as getMemory } from '@/app/api/memory/[id]/route';
 import { GET as getBackup } from '@/app/api/admin/backup/route';
+import { POST as checkStorage } from '@/app/api/admin/storage-check/route';
 import { MAX_FILE_BYTES } from '@utils/media';
 import Memory from '@models/memory';
 import Word from '@models/word';
@@ -113,6 +114,47 @@ describe('photos', () => {
     expect((await Memory.findById(memory._id)).photo).toBeUndefined();
     expect(await storedFiles(memory)).toEqual([]);
     expect((await caption({ caption: 'x' })).status).toBe(404);
+  });
+});
+
+describe('when storage fails', () => {
+  // A Vercel deployment without the Blob token: nothing can be stored.
+  const onVercelWithoutStorage = () => {
+    process.env.VERCEL = '1';
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  };
+  afterEach(() => {
+    delete process.env.VERCEL;
+    vi.restoreAllMocks();
+  });
+
+  it('a photo or voice note upload answers with the reason, and the memory keeps no file', async () => {
+    const rosa = await makeUser();
+    const memory = await makeMemory(rosa);
+    signInAs(rosa);
+    onVercelWithoutStorage();
+
+    const photo = await addPhoto(memory, { file: FILES.jpeg });
+    expect(photo.status).toBe(502);
+    expect((await photo.json()).error).toBe(
+      'No se pudo guardar el archivo: el almacenamiento de fotos no está configurado en el servidor (falta BLOB_READ_WRITE_TOKEN).',
+    );
+    expect((await addVoice(memory, { file: FILES.m4a })).status).toBe(502);
+    const saved = await Memory.findById(memory._id);
+    expect(saved.photo).toBeUndefined();
+    expect(saved.voice).toBeUndefined();
+  });
+
+  it("the admin's storage check says which step failed and why", async () => {
+    signInAs(await makeAdmin());
+    expect(await (await checkStorage()).json()).toEqual({ configured: false, ok: true, step: null, reason: null });
+    onVercelWithoutStorage();
+    expect(await (await checkStorage()).json()).toEqual({
+      configured: false,
+      ok: false,
+      step: 'escribir',
+      reason: 'el almacenamiento de fotos no está configurado en el servidor (falta BLOB_READ_WRITE_TOKEN)',
+    });
   });
 });
 

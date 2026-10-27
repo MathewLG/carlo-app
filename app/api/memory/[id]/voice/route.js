@@ -1,6 +1,6 @@
 import { isVoiceType, MAX_VOICE_SECONDS } from '@utils/media';
-import { loadEditableMemory, mediaPath, numberField, readUpload, reply } from '@utils/mediaRoutes';
-import { deleteFiles, saveFile } from '@utils/services/storage';
+import { loadEditableMemory, mediaPath, numberField, readUpload, reply, storeUpload } from '@utils/mediaRoutes';
+import { deleteFiles } from '@utils/services/storage';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +19,8 @@ export const POST = async (request, { params }) => {
 
   const previous = memory.voice?.path;
   const path = mediaPath(memory, 'voice', upload.mime);
-  await saveFile(path, upload.bytes, upload.mime);
+  const failed = await storeUpload(path, upload.bytes, upload.mime);
+  if (failed) return failed;
   memory.voice = { path, mime: upload.mime, durationSec };
   await memory.save();
   await deleteFiles([previous]);

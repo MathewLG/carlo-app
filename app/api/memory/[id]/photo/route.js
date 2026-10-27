@@ -1,6 +1,6 @@
 import { isPhotoType, MAX_CAPTION_LENGTH } from '@utils/media';
-import { loadEditableMemory, mediaPath, numberField, readUpload, reply } from '@utils/mediaRoutes';
-import { deleteFiles, saveFile } from '@utils/services/storage';
+import { loadEditableMemory, mediaPath, numberField, readUpload, reply, storeUpload } from '@utils/mediaRoutes';
+import { deleteFiles } from '@utils/services/storage';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +16,8 @@ export const POST = async (request, { params }) => {
 
   const previous = memory.photo?.path;
   const path = mediaPath(memory, 'photo', upload.mime);
-  await saveFile(path, upload.bytes, upload.mime);
+  const failed = await storeUpload(path, upload.bytes, upload.mime);
+  if (failed) return failed;
   memory.photo = {
     path,
     mime: upload.mime,

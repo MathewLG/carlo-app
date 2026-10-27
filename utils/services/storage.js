@@ -67,3 +67,34 @@ export const deleteFiles = async (pathnames) => {
   }
   await Promise.all(list.map((pathname) => rm(localPath(pathname), { force: true })));
 };
+
+// Why storing a file failed, in words safe to show the person: never the
+// token, only what kind of problem it was and Vercel Blob's own message.
+export const storageProblem = (error) => {
+  if (!blobConfigured() && process.env.VERCEL) {
+    return 'el almacenamiento de fotos no está configurado en el servidor (falta BLOB_READ_WRITE_TOKEN)';
+  }
+  const message = String(error?.message ?? error).replace(/vercel_blob_rw_[A-Za-z0-9_]+/g, '[token]');
+  return `el almacenamiento respondió: ${message}`;
+};
+
+// Writes, reads back and deletes a tiny file, for the admin's storage check.
+// Returns { configured, ok, step, reason }; step is where it failed.
+export const checkStorage = async () => {
+  const configured = blobConfigured();
+  const pathname = `media/_prueba/check-${Date.now()}.txt`;
+  const bytes = new TextEncoder().encode('carlo-app');
+  let step = 'escribir';
+  try {
+    await saveFile(pathname, bytes, 'text/plain');
+    step = 'leer';
+    const file = await readMediaFile(pathname, 'text/plain');
+    if (!file) throw new Error('el archivo no estaba al leerlo de vuelta');
+    step = 'borrar';
+    await deleteFiles([pathname]);
+    return { configured, ok: true, step: null, reason: null };
+  } catch (error) {
+    console.error(`Storage check failed while trying to ${step}`, error);
+    return { configured, ok: false, step, reason: storageProblem(error) };
+  }
+};

@@ -4,6 +4,7 @@ import { connectToDB } from '@utils/database';
 import { canChange, requireUser } from '@utils/access';
 import { extensionFor, MAX_FILE_BYTES, sniffType } from '@utils/media';
 import Memory from '@models/memory';
+import { saveFile, storageProblem } from '@utils/services/storage';
 
 export const reply = (status, body) => Response.json(body, { status });
 
@@ -42,6 +43,19 @@ export const readUpload = async (request, isAllowed, wrongTypeMessage) => {
   const mime = sniffType(bytes);
   if (!isAllowed(mime)) return { response: reply(415, { error: wrongTypeMessage }) };
   return { form, bytes, mime };
+};
+
+// Saves an upload to storage. Returns null, or the response to send when
+// storage fails: JSON with the reason, so the page can say what went wrong
+// instead of a bare server error.
+export const storeUpload = async (path, bytes, mime) => {
+  try {
+    await saveFile(path, bytes, mime);
+    return null;
+  } catch (error) {
+    console.error(`Saving ${path} failed`, error);
+    return reply(502, { error: `No se pudo guardar el archivo: ${storageProblem(error)}.` });
+  }
 };
 
 // media/<memoryId>/<kind>-<random>.<ext>: a new name for every upload.

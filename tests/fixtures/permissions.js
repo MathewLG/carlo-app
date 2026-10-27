@@ -40,4 +40,5 @@ export const PERMISSIONS = [
   { action: 'delete a sealed letter', visitante: 401, pendiente: 403, autor: 204, familiar: 403, admin: 204, carlo: 403 },
   { action: "see a sealed letter's photo", visitante: 401, pendiente: 403, autor: 200, familiar: 404, admin: 200, carlo: 404 },
   { action: "set up Carlo's access", visitante: 401, pendiente: 403, autor: 403, familiar: 403, admin: 200, carlo: 403 },
+  { action: 'check the photo storage', visitante: 401, pendiente: 403, autor: 403, familiar: 403, admin: 200, carlo: 403 },
 ];
