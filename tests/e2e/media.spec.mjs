@@ -78,6 +78,40 @@ test('a file that is not a photo is turned away before saving', async ({ page, c
   await expect(page.getByText('No se pudo abrir esa foto.')).toBeVisible();
 });
 
+// Older browsers (iPhones before iOS 17, older Chrome) reject the option that
+// turns a photo the right way up, and some have no createImageBitmap at all.
+for (const [label, olderBrowser] of [
+  [
+    'that rejects the rotation option',
+    () => {
+      const original = window.createImageBitmap;
+      window.createImageBitmap = (source, options) =>
+        options ? Promise.reject(new TypeError('The provided value is not a valid enum value')) : original(source);
+    },
+  ],
+  ['without createImageBitmap', () => delete window.createImageBitmap],
+]) {
+  test(`a photo still uploads from a browser ${label}`, async ({ page, context }) => {
+    await page.addInitScript(olderBrowser);
+    await signIn(context, await seedUser());
+    await write(page, `Foto desde un navegador viejo: ${label}`);
+    await page.getByLabel('Agregar una foto').setInputFiles(await makePhoto());
+    await expect(page.getByRole('img', { name: 'Foto elegida para este recuerdo' })).toBeVisible();
+    await page.getByRole('button', { name: 'Guardar recuerdo' }).click();
+    await expect(page).toHaveURL('/');
+    const photo = page.locator('article', { hasText: label }).getByRole('img', { name: /^Foto/ });
+    await expect(photo).toBeVisible();
+    expect(await photo.evaluate((img) => img.naturalWidth)).toBe(2000);
+  });
+}
+
+test('an iPhone HEIC photo the browser cannot open gets a clear message', async ({ page, context }) => {
+  await signIn(context, await seedUser());
+  await write(page, 'Algo');
+  await page.getByLabel('Agregar una foto').setInputFiles({ name: 'IMG_0001.HEIC', mimeType: 'image/heic', buffer: Buffer.from('not really a photo') });
+  await expect(page.getByText('Esta foto está en formato HEIC')).toBeVisible();
+});
+
 test('recording a voice note in the browser', async ({ page, context, browserName }) => {
   test.skip(browserName !== 'chromium', 'Only Chromium has a fake microphone for tests');
   await context.grantPermissions(['microphone']);
