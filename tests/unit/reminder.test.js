@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildLetterOpened, buildMonthlyReminder, monthKey, previousMonth } from '@utils/reminder';
 import { isCronRequest, siteUrl } from '@utils/cron';
+import { emailAdmins } from '@utils/services/email';
 
 const day = (d) => new Date(`${d}T12:00:00Z`);
 // 1 November 2026, 9:00 in Mexico City.
@@ -97,7 +98,6 @@ describe('emailAdmins', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const fetch = vi.fn();
     vi.stubGlobal('fetch', fetch);
-    const { emailAdmins } = await import('@utils/services/email');
     expect(await emailAdmins({ subject: 'x', html: 'x', text: 'x' })).toEqual({ sent: false, reason: 'not-configured' });
     expect(fetch).not.toHaveBeenCalled();
   });

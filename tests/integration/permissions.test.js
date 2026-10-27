@@ -18,6 +18,7 @@ import { PATCH as changeName } from '@/app/api/profile/route';
 import { GET as listWords, POST as addWord } from '@/app/api/words/route';
 import { DELETE as deleteWord, PATCH as editWord } from '@/app/api/words/[id]/route';
 import { PATCH as setCarlo } from '@/app/api/admin/carlo/route';
+import { POST as checkStorage } from '@/app/api/admin/storage-check/route';
 import Event from '@models/event';
 import Word from '@models/word';
 import { saveFile } from '@utils/services/storage';
@@ -79,6 +80,7 @@ const ACTIONS = {
     deleteMemory(request(`/api/memory/${letter._id}`, { method: 'DELETE' }), routeParams({ id: String(letter._id) })),
   "see a sealed letter's photo": ({ letter }) =>
     getMedia(request(`/api/media/${letter._id}/photo`), routeParams({ id: String(letter._id), kind: 'photo' })),
+  'check the photo storage': () => checkStorage(),
   "set up Carlo's access": () => setCarlo(request('/api/admin/carlo', { method: 'PATCH', body: { carloAccessAge: 16 } })),
   'delete a word': ({ word }) => deleteWord(request(`/api/words/${word._id}`, { method: 'DELETE' }), routeParams({ id: String(word._id) })),
 };

@@ -156,3 +156,11 @@ test('the admin downloads a backup that works without the app', async ({ page, c
   expect(html).toContain(`src="${photos[0]}"`);
   expect(html).toContain('Sin fotos, solo palabras');
 });
+
+test('the admin can check that the photo storage works', async ({ page, context }) => {
+  await signIn(context, await seedUser({ role: 'admin' }));
+  await page.goto('/admin/respaldo');
+  await page.getByRole('button', { name: 'Probar el almacenamiento' }).click();
+  await expect(page.getByText('Funciona: se pudo guardar, leer y borrar un archivo.')).toBeVisible();
+  await expectAccessible(page);
+});
